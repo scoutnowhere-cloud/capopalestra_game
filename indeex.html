@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Capopalestra Pokémon</title>
+<link rel="icon" href="data:,">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Fredoka:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg-main: #1e1b4b;
+  --bg-card: #2e2a72;
+  --bg-accent: #3b358d;
+  --text-main: #ffffff;
+  --text-mut: #a5b4fc;
+  --yellow: #facc15;
+  --yellow-hover: #eab308;
+  --red: #ef4444;
+  --green: #22c55e;
+  --blue: #3b82f6;
+  --purple: #8b5cf6;
+  --border: #4338ca;
+  --card-shadow: 0 8px 0px #110e38;
+}
+
+* { box-sizing: border-box; font-family: 'Fredoka', sans-serif; }
+
+body {
+  margin: 0;
+  background: var(--bg-main);
+  color: var(--text-main);
+  background-image: radial-gradient(#312e81 1.5px, transparent 1.5px);
+  background-size: 24px 24px;
+  min-height: 100vh;
+}
+
+main {
+  max-width: 820px;
+  margin: 0 auto;
+  padding: 20px 16px;
+}
+
+h1, h2, h3 {
+  font-family: 'Press Start 2P', monospace;
+  color: var(--yellow);
+  text-shadow: 3px 3px 0px #000;
+  margin: 0 0 12px 0;
+  line-height: 1.4;
+}
+
+h1 { font-size: 18px; text-align: center; }
+h2 { font-size: 14px; }
+.mut { color: var(--text-mut); font-size: 14px; font-weight: 600; }
+
+.badge {
+  background: var(--bg-accent);
+  border: 2px solid var(--border);
+  border-radius: 12px;
+  padding: 12px;
+  margin-bottom: 16px;
+  box-shadow: var(--card-shadow);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 12px;
+  margin: 16px 0;
+}
+
+button {
+  background: var(--yellow);
+  color: #1e1b4b;
+  border: 3px solid #000;
+  border-radius: 14px;
+  padding: 12px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 0px #000;
+  transition: transform 0.1s, background 0.1s;
+}
+
+button:hover {
+  background: var(--yellow-hover);
+  transform: translateY(-2px);
+}
+
+button:active {
+  transform: translateY(2px);
+  box-shadow: 0 2px 0px #000;
+}
+
+button.btn-sec {
+  background: var(--bg-card);
+  color: var(--text-main);
+  border-color: var(--border);
+  box-shadow: 0 4px 0px #110e38;
+}
+
+button.btn-sec:hover {
+  background: var(--bg-accent);
+}
+
+.field {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 14px;
+  margin: 16px 0;
+}
+
+.mon {
+  background: var(--bg-card);
+  border: 3px solid var(--border);
+  border-radius: 16px;
+  padding: 12px;
+  text-align: center;
+  box-shadow: var(--card-shadow);
+  position: relative;
+}
+
+.mon img {
+  width: 96px;
+  height: 96px;
+  image-rendering: pixelated;
+  filter: drop-shadow(0px 4px 0px rgba(0,0,0,0.3));
+}
+
+.bar {
+  height: 12px;
+  background: #110e38;
+  border: 2px solid #000;
+  border-radius: 8px;
+  overflow: hidden;
+  margin-top: 6px;
+}
+
+.bar i {
+  display: block;
+  height: 100%;
+  background: var(--green);
+  transition: width .3s;
+}
+
+.log {
+  background: #0f172a;
+  border: 3px solid #334155;
+  border-radius: 14px;
+  padding: 12px;
+  height: 160px;
+  overflow-y: auto;
+  font-size: 13px;
+  margin-top: 12px;
+  box-shadow: inset 0 2px 6px rgba(0,0,0,0.5);
+  font-family: monospace;
+}
+
+.moves {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.tag {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: #334155;
+  color: #fff;
+  margin: 2px;
+  border: 1px solid rgba(255,255,255,0.2);
+}
+
+.item-card, .team-list-item {
+  background: var(--bg-card);
+  border: 2px solid var(--border);
+  border-radius: 14px;
+  padding: 10px 12px;
+  margin-bottom: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+</style>
+</head>
+<body>
+<main id="app">Caricamento in corso...</main>
+
+<script>
+const STATS = ['hp', 'attack', 'defense', 'special-attack', 'special-defense', 'speed'];
+const LADDER = [
+  [1, 8, 'Allenatore Novizio'], [9, 14, '1ª Palestra'], [15, 20, '2ª Palestra'],
+  [21, 28, '3ª Palestra'], [29, 36, '4ª Palestra'], [37, 44, '5ª Palestra'],
+  [45, 52, '6ª Palestra'], [53, 59, '7ª Palestra'], [60, 65, '8ª Palestra'], [66, 75, 'Superquattro']
+];
+const CAP = [7, 18, 40, 53, 68];
+const BAN = new Set([
+  'explosion', 'self-destruct', 'hyper-beam', 'giga-impact', 'fly', 'dig', 'dive',
+  'bounce', 'solar-beam', 'solar-blade', 'skull-bash', 'razor-wind', 'sky-attack',
+  'focus-punch', 'fissure', 'guillotine', 'horn-drill', 'sheer-cold', 'future-sight',
+  'doom-desire', 'last-resort', 'dream-eater', 'belch', 'fake-out', 'sucker-punch',
+  'steel-beam', 'mind-blown', 'misty-explosion', 'shadow-force', 'phantom-force',
+  'freeze-shock', 'ice-burn', 'meteor-beam', 'electro-shot', 'sky-drop', 'synchronoise', 'struggle'
+]);
+
+const ITEMS = {
+  potion: { name: 'Pozione Max', desc: 'Ripristina i PS fuori dalla lotta.' }
+};
+
+let D = {};
+let run = null;
+let B = null;
+
+function getEl(selector) {
+  return document.querySelector(selector);
+}
+
+function app() {
+  return document.querySelector('#app');
+}
+
+function rnd(arr) {
+  return arr[Math.floor(Math.random() * arr.length)];
+}
+
+function shuffle(arr) {
+  return [...arr].sort(function() { return Math.random() - 0.5; });
+}
+
+function phase(level) {
+  const match = LADDER.find(function(item) { return level >= item[0] && level <= item[1]; });
+  return match ? match[2] : 'Campione';
+}
+
+function tn(type) {
+  const match = D.types.find(function(x) { return x.name === type; });
+  return match ? match.name_it : type;
+}
+
+function nm(mon) {
+  return D.pokemon[mon.name].name_it;
+}
+
+function saveRun() {
+  try {
+    localStorage.setItem('run', JSON.stringify(run));
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+function loadRun() {
+  try {
+    return JSON.parse(localStorage.getItem('run'));
+  } catch (e) {
+    return null;
+  }
+}
+
+const memo = {};
+function minLevel(name) {
+  if (memo[name] !== undefined) return memo[name];
+  const p = D.pokemon[name];
+  let v = 1;
+  if (p.evolves_from && D.pokemon[p.evolves_from]) {
+    const d = p.evolution_details[0] || {};
+    v = Math.max(minLevel(p.evolves_from), d.min_level || (p.stage >= 2 ? 40 : 25));
+  }
+  memo[name] = v;
+  return v;
+}
+
+function eligible(p, L) {
+  return !p.is_legendary && !p.is_mythical && !p.is_baby && minLevel(p.name) <= L && p.bst <= 330 + L * 5;
+}
+
+function evolved(name, L) {
+  for (const t of D.pokemon[name].evolves_to) {
+    const e = D.pokemon[t];
+    const d = e.evolution_details[0] || {};
+    if (d.min_level && d.min_level <= L && !e.is_legendary) {
+      return evolved(t, L);
+    }
+  }
+  return name;
+}
+
+function score(m, types) {
+  return (m.power || 0) * ((m.accuracy || 100) / 100) * (types.includes(m.type) ? 1.5 : 1);
+}
+
+function pickMoves(p, L) {
+  const candidates = Object.entries(p.levelup_moves)
+    .filter(function(entry) {
+      const moveName = entry[0];
+      const levelNeeded = entry[1];
+      return levelNeeded <= L && D.moves[moveName] && D.moves[moveName].power && !BAN.has(moveName);
+    })
+    .map(function(entry) { return D.moves[entry[0]]; });
+
+  candidates.sort(function(a, b) {
+    return score(b, p.types) - score(a, p.types);
+  });
+
+  const out = candidates.slice(0, 4);
+  if (!out.length && D.moves.tackle) {
+    out.push(D.moves.tackle);
+  }
+  return out;
+}
+
+function mk(name, L, natName) {
+  const p = D.pokemon[name];
+  const nat = D.natures.find(function(n) { return n.name === natName; }) || rnd(D.natures);
+  const s = {};
+
+  for (const k of STATS) {
+    const core = Math.floor((2 * p.base_stats[k] + 15) * L / 100);
+    if (k === 'hp') {
+      s.hp = core + L + 10;
+    } else {
+      const mult = nat.increases === k ? 1.1 : (nat.decreases === k ? 0.9 : 1);
+      s[k] = Math.floor((core + 5) * mult);
+    }
+  }
+  return { name: name, L: L, nat: nat.name, types: p.types, s: s, hp: s.hp, moves: pickMoves(p, L) };
+}
+
+function mult(mt, d) {
+  return d.types.reduce(function(a, t) {
+    const eff = (D.eff[mt] || {})[t];
+    return a * (eff !== undefined ? eff : 1);
+  }, 1);
+}
+
+function dmg(a, d, m, rand) {
+  if (rand === undefined) rand = true;
+  if (!m.power) return 0;
+  const ph = m.damage_class === 'physical';
+  const A = a.s[ph ? 'attack' : 'special-attack'];
+  const De = d.s[ph ? 'defense' : 'special-defense'];
+  let x = Math.floor(Math.floor(Math.floor(2 * a.L / 5 + 2) * m.power * A / De) / 50) + 2;
+  x *= (a.types.includes(m.type) ? 1.5 : 1) * mult(m.type, d);
+  if (rand) x *= 0.85 + Math.random() * 0.15;
+  return Math.floor(x);
+}
+
+function chooseNpc(a, d) {
+  let best = [];
+  let bv = -1;
+  for (const m of a.moves) {
+    const v = dmg(a, d, m, false) * ((m.accuracy || 100) / 100);
+    if (v > bv + 1e-9) {
+      bv = v;
+      best = [m];
+    } else if (Math.abs(v - bv) < 1e-9) {
+      best.push(m);
+    }
+  }
+  return rnd(best);
+}
+
+function npcTeam(L, n) {
+  const pool = Object.values(D.pokemon).filter(function(p) { return eligible(p, L); });
+  const team = [];
+  const used = new Set();
+  for (let i = 0; i < n; i++) {
+    let c = pool.filter(function(p) { return !used.has(p.types[0]); });
+    if (!c.length) c = pool;
+    const p = rnd(c);
+    used.add(p.types[0]);
+    team.push(mk(evolved(p.name, L), L));
+  }
+  return team;
+}
+
+function tagHtml(t) {
+  return '<span class="tag">' + tn(t) + '</span>';
+}
+
+function panel(m, label) {
+  if (!label) label = '';
+  return '<div class="mon">' +
+    '<div class="mut">' + label + '</div>' +
+    '<img src="' + (D.pokemon[m.name].sprite || '') + '" alt="' + nm(m) + '">' +
+    '<div><b>' + nm(m) + '</b> <span class="mut">Lv ' + m.L + '</span></div>' +
+    '<div style="margin:4px 0">' + m.types.map(tagHtml).join('') + '</div>' +
+    '<div class="bar"><i style="width:' + Math.max(0, 100 * m.hp / m.s.hp) + '%"></i></div>' +
+    '<div class="mut" style="margin-top:4px">' + m.hp + '/' + m.s.hp + ' PS</div>' +
+  '</div>';
+}
+
+function home() {
+  const saved = loadRun();
+  let typesHtml = '';
+  for (const t of D.types) {
+    typesHtml += '<button data-t="' + t.name + '">' + t.name_it + '</button>';
+  }
+
+  app().innerHTML =
+    '<h1>CAPOPALESTRA</h1>' +
+    '<p class="mut" style="text-align:center">Diventa il Capopalestra definitivo!</p>' +
+    (saved ? '<div style="text-align:center;margin-bottom:20px"><button id="cont">Continua run (' + tn(saved.type) + ', Lvl ' + saved.level + ')</button></div>' : '') +
+    '<h2>Scegli il tuo Tipo:</h2>' +
+    '<div class="grid">' + typesHtml + '</div>';
+
+  if (saved) {
+    getEl('#cont').onclick = function() {
+      run = saved;
+      if (!run.items) run.items = { potion: 1 };
+      hub();
+    };
+  }
+
+  const buttons = document.querySelectorAll('[data-t]');
+  buttons.forEach(function(b) {
+    b.onclick = function() { starters(b.dataset.t); };
+  });
+}
+
+function starters(type) {
+  const pool = Object.values(D.pokemon).filter(function(p) {
+    return p.stage === 0 && !p.is_legendary && !p.is_mythical && !p.is_baby && p.types.includes(type);
+  });
+  const opts = shuffle(pool).slice(0, 3);
+
+  let optsHtml = '';
+  for (const p of opts) {
+    optsHtml += '<button data-n="' + p.name + '"><img src="' + (p.sprite || '') + '" width="72" alt=""><br><b>' + p.name_it + '</b></button>';
+  }
+
+  app().innerHTML =
+    '<h1>SCEGLI LO STARTER</h1>' +
+    '<p class="mut" style="text-align:center">Scegli il tuo primo Pokémon per la palestra ' + tn(type) + '.</p>' +
+    '<div class="grid">' + optsHtml + '</div>';
+
+  const buttons = document.querySelectorAll('[data-n]');
+  buttons.forEach(function(b) {
+    b.onclick = function() {
+      run = { type: type, level: 1, team: [{ name: b.dataset.n, nat: rnd(D.natures).name }], taken: [], items: { potion: 2 } };
+      saveRun();
+      hub();
+    };
+  });
+}
+
+function hub(msg) {
+  if (!msg) msg = '';
+  const L = run.level;
+  let ev = '';
+
+  run.team.forEach(function(t) {
+    const n = evolved(t.name, L);
+    if (n !== t.name) {
+      ev += '✨ ' + D.pokemon[t.name].name_it + ' si è evoluto in ' + D.pokemon[n].name_it + '! ';
+      t.name = n;
+    }
+  });
+
+  if (ev) saveRun();
+  const team = run.team.map(function(t) { return mk(t.name, L, t.nat); });
+
+  let fieldHtml = '';
+  team.forEach(function(m, i) {
+    fieldHtml += panel(m, i === 0 ? '1° In Campo' : 'Panchina');
+  });
+
+  app().innerHTML =
+    '<div class="badge">' +
+      '<h1>' + phase(L) + ' — LIVELLO ' + L + '</h1>' +
+      '<div style="text-align:center" class="mut">Specializzazione: ' + tagHtml(run.type) + '</div>' +
+    '</div>' +
+    (msg || ev ? '<div class="badge" style="background:var(--bg-card);color:var(--yellow);text-align:center">' + msg + ' ' + ev + '</div>' : '') +
+    '<h2>La tua Squadra (' + team.length + '/6)</h2>' +
+    '<div class="field">' + fieldHtml + '</div>' +
+    '<div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:20px">' +
+      '<button id="go" style="flex:2">Lotta contro lo Sfidante</button>' +
+      '<button id="organize" class="btn-sec" style="flex:1">Gestisci Squadra</button>' +
+      '<button id="bag" class="btn-sec" style="flex:1">Zaino</button>' +
+      '<button id="quit" class="btn-sec" style="background:#8f1d1d">Abbandona</button>' +
+    '</div>';
+
+  getEl('#go').onclick = startBattle;
+  getEl('#organize').onclick = organizeTeam;
+  getEl('#bag').onclick = openBag;
+  getEl('#quit').onclick = function() {
+    if (confirm('Ricominciare da capo?')) {
+      localStorage.removeItem('run');
+      run = null;
+      home();
+    }
+  };
+}
+
+function organizeTeam() {
+  let itemsHtml = '';
+  run.team.forEach(function(t, index) {
+    itemsHtml += '<div class="team-list-item">' +
+      '<div style="display:flex;align-items:center;gap:10px">' +
+        '<img src="' + (D.pokemon[t.name].sprite || '') + '" width="48" alt="">' +
+        '<div><b>' + (index + 1) + '. ' + D.pokemon[t.name].name_it + '</b></div>' +
+      '</div>' +
+      '<div>' +
+        (index > 0 ? '<button onclick="moveMon(' + index + ', -1)">▲</button>' : '') +
+        (index < run.team.length - 1 ? '<button onclick="moveMon(' + index + ', 1)">▼</button>' : '') +
+      '</div>' +
+    '</div>';
+  });
+
+  app().innerHTML =
+    '<h1>GESTIONE SQUADRA</h1>' +
+    '<p class="mut">Ordina i tuoi Pokémon per la lotta.</p>' +
+    '<div style="margin:20px 0">' + itemsHtml + '</div>' +
+    '<button id="back">Indietro</button>';
+
+  getEl('#back').onclick = function() { hub(); };
+}
+
+window.moveMon = function(index, dir) {
+  const target = index + dir;
+  if (target < 0 || target >= run.team.length) return;
+  const temp = run.team[index];
+  run.team[index] = run.team[target];
+  run.team[target] = temp;
+  saveRun();
+  organizeTeam();
+};
+
+function openBag() {
+  const items = run.items || {};
+  const entries = Object.entries(items);
+
+  let itemsHtml = '';
+  if (entries.length === 0) {
+    itemsHtml = '<p class="mut">Zaino vuoto.</p>';
+  } else {
+    entries.forEach(function(entry) {
+      const k = entry[0];
+      const count = entry[1];
+      itemsHtml += '<div class="item-card"><div><b>' + (ITEMS[k] ? ITEMS[k].name : k) + ' (x' + count + ')</b></div></div>';
+    });
+  }
+
+  app().innerHTML =
+    '<h1>ZAINO STRUMENTI</h1>' +
+    '<div style="margin:20px 0">' + itemsHtml + '</div>' +
+    '<button id="back">Indietro</button>';
+
+  getEl('#back').onclick = function() { hub(); };
+}
+
+function startBattle() {
+  const L = run.level;
+  B = {
+    me: run.team.map(function(t) { return mk(t.name, L, t.nat); }),
+    fo: npcTeam(L, run.team.length),
+    mi: 0,
+    fi: 0,
+    over: null,
+    log: ['Uno sfidante ti sfida!']
+  };
+  fight();
+}
+
+function fight() {
+  const me = B.me[B.mi];
+  const fo = B.fo[B.fi];
+
+  const myAlive = B.me.filter(function(m) { return m.hp > 0; }).length;
+  const foAlive = B.fo.filter(function(m) { return m.hp > 0; }).length;
+
+  let movesHtml = '';
+  me.moves.forEach(function(m, i) {
+    movesHtml += '<button data-m="' + i + '">' + m.name_it + '<br><span class="mut">' + tn(m.type) + ' · Pot. ' + (m.power || 0) + '</span></button>';
+  });
+
+  const logHtml = B.log.map(function(l) { return '<div>' + l + '</div>'; }).join('');
+
+  app().innerHTML =
+    '<div class="field">' + panel(fo, 'Sfidante') + panel(me, 'Tuo Pokémon') + '</div>' +
+    '<div class="mut" style="text-align:center;margin:8px 0">I tuoi vivi: ' + myAlive + '/' + B.me.length + ' | Avversari: ' + foAlive + '/' + B.fo.length + '</div>' +
+    '<div class="log" id="log">' + logHtml + '</div>' +
+    (B.over ?
+      '<button id="next" style="width:100%;margin-top:12px">' + (B.over === 'win' ? 'Vittoria! Continua' : 'Sconfitta... Continua') + '</button>' :
+      '<div class="moves">' + movesHtml + '</div>'
+    );
+
+  const lg = getEl('#log');
+  lg.scrollTop = lg.scrollHeight;
+
+  if (B.over) {
+    getEl('#next').onclick = endBattle;
+  } else {
+    document.querySelectorAll('[data-m]').forEach(function(b) {
+      b.onclick = function() { turn(parseInt(b.dataset.m, 10)); };
+    });
+  }
+}
+
+function turn(mi) {
+  const me = B.me[B.mi];
+  const fo = B.fo[B.fi];
+  function say(t) { B.log.push(t); }
+
+  const order = [
+    [me, fo, me.moves[mi], true],
+    [fo, me, chooseNpc(fo, me), false]
+  ];
+
+  order.sort(function(x, y) {
+    return (y[2].priority - x[2].priority) || (y[0].s.speed - x[0].s.speed) || (Math.random() - 0.5);
+  });
+
+  for (const item of order) {
+    const a = item[0];
+    const d = item[1];
+    const m = item[2];
+    const mine = item[3];
+
+    if (a.hp <= 0 || d.hp <= 0) continue;
+    say((mine ? '' : 'Avversario: ') + nm(a) + ' usa ' + m.name_it + '!');
+
+    if (Math.random() * 100 > (m.accuracy || 100)) {
+      say('Ma fallisce!');
+      continue;
+    }
+
+    const e = mult(m.type, d);
+    if (e === 0) {
+      say('Non ha effetto...');
+      continue;
+    }
+
+    let x = dmg(a, d, m);
+    const crit = Math.random() < 1 / 16;
+    if (crit) x = Math.floor(x * 1.5);
+    d.hp = Math.max(0, d.hp - x);
+
+    say(x + ' danni' + (crit ? ' (Colpo Critico!)' : '') + (e > 1 ? ' — Superefficace!' : (e < 1 ? ' — Poco efficace...' : '')));
+
+    if (d.hp <= 0) {
+      say(nm(d) + ' è esausto!');
+      if (mine) {
+        if (B.fi < B.fo.length - 1) {
+          B.fi++;
+          say('L\'avversario manda in campo ' + nm(B.fo[B.fi]) + '!');
+        } else {
+          B.over = 'win';
+          break;
+        }
+      } else {
+        if (B.mi < B.me.length - 1) {
+          B.mi++;
+          say('Vai, ' + nm(B.me[B.mi]) + '!');
+        } else {
+          B.over = 'lose';
+          break;
+        }
+      }
+    }
+  }
+  fight();
+}
+
+function endBattle() {
+  const win = B.over === 'win';
+  if (win && run.level >= 75) {
+    localStorage.removeItem('run');
+    app().innerHTML = '<h1>CAMPIONE!</h1><p>Hai completato la run!</p><button id="h">Nuova Avventura</button>';
+    getEl('#h').onclick = home;
+    return;
+  }
+
+  let itemMsg = '';
+  if (win && Math.random() < 0.5) {
+    run.items = run.items || {};
+    run.items.potion = (run.items.potion || 0) + 1;
+    itemMsg = 'Hai trovato 1x Pozione Max!';
+  }
+
+  run.level = win ? run.level + 1 : Math.max(1, run.level - 1);
+  const cap = win && CAP.find(function(c) { return run.level >= c && !run.taken.includes(c); });
+
+  if (cap) {
+    run.taken.push(cap);
+    saveRun();
+    capture(itemMsg);
+  } else {
+    saveRun();
+    hub(win ? 'Vittoria! Livello +1. ' + itemMsg : 'Sconfitta. Livello -1.');
+  }
+}
+
+function capture(extraMsg) {
+  if (!extraMsg) extraMsg = '';
+  const L = run.level;
+  const have = new Set(run.team.map(function(t) { return t.name; }));
+  const pool = Object.values(D.pokemon).filter(function(p) {
+    return eligible(p, L) && p.final_types.includes(run.type) && !have.has(p.name);
+  });
+  const opts = shuffle(pool).slice(0, 3);
+
+  if (!opts.length || run.team.length >= 6) {
+    hub('Nessuna cattura disponibile. ' + extraMsg);
+    return;
+  }
+
+  let optsHtml = '';
+  opts.forEach(function(p) {
+    optsHtml += '<button data-n="' + p.name + '"><img src="' + (p.sprite || '') + '" width="72" alt=""><br><b>' + p.name_it + '</b><br>' + p.types.map(tagHtml).join('') + '</button>';
+  });
+
+  app().innerHTML =
+    '<h1>NUOVA CATTURA!</h1>' +
+    '<p class="mut" style="text-align:center">Scegli un nuovo Pokémon per la palestra ' + tn(run.type) + '.</p>' +
+    '<div class="grid">' + optsHtml + '</div>';
+
+  document.querySelectorAll('[data-n]').forEach(function(b) {
+    b.onclick = function() {
+      run.team.push({ name: b.dataset.n, nat: rnd(D.natures).name });
+      saveRun();
+      hub('Nuovo compagno aggiunto! ' + extraMsg);
+    };
+  });
+}
+
+async function load() {
+  try {
+    const files = ['types', 'natures', 'moves', 'pokemon'];
+    const promises = files.map(function(f) {
+      return fetch('data/' + f + '.json').then(function(r) {
+        if (!r.ok) throw new Error('HTTP error ' + r.status);
+        return r.json();
+      });
+    });
+
+    const results = await Promise.all(promises);
+    D = {
+      types: results[0].types,
+      eff: results[0].effectiveness,
+      natures: results[1],
+      moves: results[2],
+      pokemon: results[3]
+    };
+    home();
+  } catch (e) {
+    console.error(e);
+    app().innerHTML = '<h1>Errore Dati</h1><p class="mut">Assicurati di aver eseguito python build_data.py e un server locale.</p>';
+  }
+}
+
+load();
+</script>
+</body>
+</html>

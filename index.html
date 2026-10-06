@@ -327,7 +327,6 @@ function mk(name, L, natName, currentHp, heldItem) {
     }
   }
 
-  // Applica bonus strumenti passivi
   if (heldItem === 'choice-scarf') s.speed = Math.floor(s.speed * 1.5);
   if (heldItem === 'choice-band') s.attack = Math.floor(s.attack * 1.5);
   if (heldItem === 'choice-specs') s['special-attack'] = Math.floor(s['special-attack'] * 1.5);
@@ -415,7 +414,8 @@ function home() {
       '<h2 style="text-align:center;margin-bottom:8px">📜 REGOLAMENTO DI GIOCO</h2>' +
       '<p>🏆 <b>Obiettivo:</b> Scegli il tuo tipo elementale e sali fino al <b>Livello 100</b> per diventare il Campione Assoluto della Lega Pokémon!</p>' +
       '<p>⚔️ <b>Lotte:</b> Vinci le sfide per salire di livello; la sconfitta ti fa retrocedere.</p>' +
-      '<p>🎒 <b>Strumenti Tenuti:</b> Equipaggia la tua squadra con oggetti come Avanzi, Assorbisfera o Lenti Scelta per ribaltare l\'esito delle lotte!</p>' +
+      '<p>🔄 <b>Scambi:</b> Ogni 7-8 livelli potresti ricevere una proposta di scambio per la tua squadra!</p>' +
+      '<p>🎒 <b>Strumenti:</b> Equipaggia la tua squadra con oggetti strategici per vincere le lotte.</p>' +
     '</div>' +
     (saved ? '<div style="text-align:center;margin-bottom:20px"><button id="cont" style="width:100%">Continua Run (' + tn(saved.type) + ' — Lvl ' + saved.level + ')</button></div>' : '') +
     '<h2>Scegli il tuo Tipo Specializzato:</h2>' +
@@ -425,6 +425,7 @@ function home() {
     getEl('#cont').onclick = function() {
       run = saved;
       if (!run.items) run.items = { potion: 1, leftovers: 1 };
+      if (!run.nextTrade) run.nextTrade = run.level + Math.floor(Math.random() * 2) + 7;
       hub();
     };
   }
@@ -452,7 +453,14 @@ function starters(type) {
 
   document.querySelectorAll('[data-n]').forEach(function(b) {
     b.onclick = function() {
-      run = { type: type, level: 1, team: [{ name: b.dataset.n, nat: rnd(D.natures).name, currentHp: null, heldItem: null }], taken: [], items: { potion: 2, leftovers: 1 } };
+      run = {
+        type: type,
+        level: 1,
+        team: [{ name: b.dataset.n, nat: rnd(D.natures).name, currentHp: null, heldItem: null }],
+        taken: [],
+        items: { potion: 2, leftovers: 1 },
+        nextTrade: 7 + Math.floor(Math.random() * 2)
+      };
       saveRun();
       hub();
     };
@@ -686,6 +694,35 @@ function fight() {
   }
 }
 
+// Controllo unico dei KO per evitare blocchi da danni passivi
+function checkFaint(say) {
+  const me = B.me[B.mi];
+  const fo = B.fo[B.fi];
+
+  if (fo.hp <= 0) {
+    say(nm(fo) + ' è esausto!');
+    if (B.fi < B.fo.length - 1) {
+      B.fi++;
+      say('L\'avversario manda in campo ' + nm(B.fo[B.fi]) + '!');
+    } else {
+      B.over = 'win';
+      return true;
+    }
+  }
+
+  if (me.hp <= 0) {
+    say(nm(me) + ' è esausto!');
+    if (B.mi < B.me.length - 1) {
+      B.mi++;
+      say('Vai, ' + nm(B.me[B.mi]) + '!');
+    } else {
+      B.over = 'lose';
+      return true;
+    }
+  }
+  return false;
+}
+
 function turn(mi) {
   const me = B.me[B.mi];
   const fo = B.fo[B.fi];
@@ -706,7 +743,7 @@ function turn(mi) {
     const m = item[2];
     const mine = item[3];
 
-    if (a.hp <= 0 || d.hp <= 0) continue;
+    if (a.hp <= 0 || d.hp <= 0 || B.over) continue;
     say((mine ? '' : 'Avversario: ') + nm(a) + ' usa ' + m.name_it + '!');
 
     if (Math.random() * 100 > (m.accuracy || 100)) {
@@ -724,7 +761,6 @@ function turn(mi) {
     const crit = Math.random() < 1 / 16;
     if (crit) x = Math.floor(x * 1.5);
 
-    // Focalnastro check
     if (d.hp === d.s.hp && x >= d.hp && d.heldItem === 'focus-sash') {
       x = d.hp - 1;
       say(nm(d) + ' resiste con 1 PS grazie al Focalnastro!');
@@ -733,46 +769,27 @@ function turn(mi) {
     d.hp = Math.max(0, d.hp - x);
     say(x + ' danni' + (crit ? ' (Colpo Critico!)' : '') + (e > 1 ? ' — Superefficace!' : (e < 1 ? ' — Poco efficace...' : '')));
 
-    // Bitorzolelmo (danno da contatto se fisico)
+    if (checkFaint(say)) break;
+
+    // Effetti passivi da contatto
     if (m.damage_class === 'physical' && d.heldItem === 'rocky-helmet' && a.hp > 0) {
       const rec = Math.floor(a.s.hp / 6);
       a.hp = Math.max(0, a.hp - rec);
       say(nm(a) + ' subisce danni dal Bitorzolelmo!');
+      if (checkFaint(say)) break;
     }
 
-    // Assorbisfera recoil
     if (a.heldItem === 'life-orb' && a.hp > 0) {
       const orbDmg = Math.floor(a.s.hp / 10);
       a.hp = Math.max(0, a.hp - orbDmg);
       say(nm(a) + ' perde PS per l\'Assorbisfera!');
+      if (checkFaint(say)) break;
     }
 
-    // Avanzi
     if (a.heldItem === 'leftovers' && a.hp > 0 && a.hp < a.s.hp) {
       const heal = Math.floor(a.s.hp / 16);
       a.hp = Math.min(a.s.hp, a.hp + heal);
       say(nm(a) + ' recupera PS con Avanzi!');
-    }
-
-    if (d.hp <= 0) {
-      say(nm(d) + ' è esausto!');
-      if (mine) {
-        if (B.fi < B.fo.length - 1) {
-          B.fi++;
-          say('L\'avversario manda in campo ' + nm(B.fo[B.fi]) + '!');
-        } else {
-          B.over = 'win';
-          break;
-        }
-      } else {
-        if (B.mi < B.me.length - 1) {
-          B.mi++;
-          say('Vai, ' + nm(B.me[B.mi]) + '!');
-        } else {
-          B.over = 'lose';
-          break;
-        }
-      }
     }
   }
   fight();
@@ -794,6 +811,14 @@ function endBattle() {
   run.level = win ? run.level + 1 : Math.max(1, run.level - 1);
   const cap = win && CAP.find(function(c) { return run.level >= c && !run.taken.includes(c); });
 
+  // Evento di scambio Pokémon
+  if (win && run.level >= (run.nextTrade || 7)) {
+    run.nextTrade = run.level + 7 + Math.floor(Math.random() * 2);
+    saveRun();
+    triggerTradeOffer(itemMsg);
+    return;
+  }
+
   if (cap) {
     run.taken.push(cap);
     saveRun();
@@ -803,6 +828,64 @@ function endBattle() {
     hub(win ? 'Vittoria! Livello +1. ' + itemMsg : 'Sconfitta. Livello -1.');
   }
 }
+
+function triggerTradeOffer(extraMsg) {
+  const L = run.level;
+  const have = new Set(run.team.map(function(t) { return t.name; }));
+  const pool = Object.values(D.pokemon).filter(function(p) {
+    return eligible(p, L) && p.final_types.includes(run.type) && !have.has(p.name);
+  });
+
+  if (!pool.length) {
+    hub('Un allenatore voleva uno scambio, ma non hai Pokémon disponibili. ' + extraMsg);
+    return;
+  }
+
+  const offeredMon = rnd(pool);
+
+  let teamOptions = '';
+  run.team.forEach(function(t, idx) {
+    teamOptions += '<div class="team-list-item">' +
+      '<div style="display:flex;align-items:center;gap:10px">' +
+        '<img src="' + (D.pokemon[t.name].sprite || '') + '" width="48" alt="">' +
+        '<div><b>' + D.pokemon[t.name].name_it + '</b></div>' +
+      '</div>' +
+      '<button onclick="executeTrade(' + idx + ', \'' + offeredMon.name + '\')">Scambia</button>' +
+    '</div>';
+  });
+
+  app().innerHTML =
+    '<h1>🔄 PROPOSTA DI SCAMBIO!</h1>' +
+    '<p class="mut" style="text-align:center">Un Allenatore ti offre <b>' + offeredMon.name_it + '</b> in cambio di un tuo Pokémon!</p>' +
+    '<div style="text-align:center;margin:16px 0"><img src="' + (offeredMon.sprite || '') + '" width="96" alt=""></div>' +
+    '<h2>Scegli chi cedere:</h2>' +
+    '<div style="margin:16px 0">' + teamOptions + '</div>' +
+    '<button id="decline" class="btn-sec" style="width:100%">Rifiuta lo Scambio</button>';
+
+  getEl('#decline').onclick = function() {
+    hub('Hai rifiutato lo scambio. ' + extraMsg);
+  };
+}
+
+window.executeTrade = function(teamIndex, newMonName) {
+  const oldName = D.pokemon[run.team[teamIndex].name].name_it;
+  const heldItem = run.team[teamIndex].heldItem;
+
+  // Se il Pokémon ceduto aveva un oggetto, viene restituito allo Zaino
+  if (heldItem) {
+    run.items[heldItem] = (run.items[heldItem] || 0) + 1;
+  }
+
+  run.team[teamIndex] = {
+    name: newMonName,
+    nat: rnd(D.natures).name,
+    currentHp: null,
+    heldItem: null
+  };
+
+  saveRun();
+  hub('Scambio effettuato! Hai dato ' + oldName + ' e ricevuto ' + D.pokemon[newMonName].name_it + '!');
+};
 
 function capture(extraMsg) {
   if (!extraMsg) extraMsg = '';
@@ -859,7 +942,7 @@ async function load() {
     home();
   } catch (e) {
     console.error(e);
-    app().innerHTML = '<h1>Errore Dati</h1><p class="mut">Assicurati che la cartella data/ contenga tutti i file JSON (incluso items.json).</p>';
+    app().innerHTML = '<h1>Errore Dati</h1><p class="mut">Assicurati che la cartella data/ contenga tutti i file JSON.</p>';
   }
 }
 

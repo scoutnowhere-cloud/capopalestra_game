@@ -203,7 +203,7 @@ button.btn-sec:hover {
   align-items: center;
 }
 
-.held-badge {
+.held-badge, .ability-badge {
   font-size: 11px;
   background: var(--purple);
   color: #fff;
@@ -211,6 +211,16 @@ button.btn-sec:hover {
   border-radius: 8px;
   margin-top: 4px;
   display: inline-block;
+}
+
+.ability-badge {
+  background: #0284c7;
+}
+
+.stat-stages {
+  font-size: 11px;
+  margin-top: 4px;
+  color: #fde047;
 }
 </style>
 </head>
@@ -312,7 +322,12 @@ function pickMoves(p, L) {
   return out;
 }
 
-function mk(name, L, natName, currentHp, heldItem) {
+function stageMult(stage) {
+  if (stage >= 0) return (2 + stage) / 2;
+  return 2 / (2 + Math.abs(stage));
+}
+
+function mk(name, L, natName, currentHp, heldItem, ability) {
   const p = D.pokemon[name];
   const nat = D.natures.find(function(n) { return n.name === natName; }) || rnd(D.natures);
   const s = {};
@@ -336,29 +351,91 @@ function mk(name, L, natName, currentHp, heldItem) {
     s['special-defense'] = Math.floor(s['special-defense'] * 1.5);
   }
 
+  const chosenAbility = ability || (p.abilities && p.abilities.length ? rnd(p.abilities) : 'nessuna');
+
   const maxHp = s.hp;
   const hpVal = (currentHp !== undefined && currentHp !== null) ? Math.min(currentHp, maxHp) : maxHp;
-  return { name: name, L: L, nat: nat.name, types: p.types, s: s, hp: hpVal, heldItem: heldItem || null, moves: pickMoves(p, L) };
+  
+  return { 
+    name: name, 
+    L: L, 
+    nat: nat.name, 
+    types: p.types, 
+    s: s, 
+    hp: hpVal, 
+    heldItem: heldItem || null, 
+    ability: chosenAbility,
+    stages: { attack: 0, defense: 0, 'special-attack': 0, 'special-defense': 0, speed: 0 },
+    moves: pickMoves(p, L) 
+  };
 }
 
 function mult(mt, d) {
+  if (d.ability === 'levitate' && mt === 'ground') return 0;
   return d.types.reduce(function(a, t) {
     const eff = (D.eff[mt] || {})[t];
     return a * (eff !== undefined ? eff : 1);
   }, 1);
 }
 
+function getStat(m, statKey) {
+  const base = m.s[statKey];
+  const stage = m.stages[statKey] || 0;
+  return Math.floor(base * stageMult(stage));
+}
+
 function dmg(a, d, m, rand) {
   if (rand === undefined) rand = true;
   if (!m.power) return 0;
   const ph = m.damage_class === 'physical';
-  const A = a.s[ph ? 'attack' : 'special-attack'];
-  const De = d.s[ph ? 'defense' : 'special-defense'];
+  const A = getStat(a, ph ? 'attack' : 'special-attack');
+  const De = getStat(d, ph ? 'defense' : 'special-defense');
   let x = Math.floor(Math.floor(Math.floor(2 * a.L / 5 + 2) * m.power * A / De) / 50) + 2;
-  x *= (a.types.includes(m.type) ? 1.5 : 1) * mult(m.type, d);
+  
+  let typeMult = a.types.includes(m.type) ? 1.5 : 1;
+  
+  // Abilità: Torrent, Blaze, Overgrow
+  if (a.hp <= a.s.hp / 3) {
+    if ((a.ability === 'torrent' && m.type === 'water') ||
+        (a.ability === 'blaze' && m.type === 'fire') ||
+        (a.ability === 'overgrow' && m.type === 'grass')) {
+      typeMult *= 1.5;
+    }
+  }
+
+  x *= typeMult * mult(m.type, d);
   if (a.heldItem === 'life-orb') x *= 1.3;
   if (rand) x *= 0.85 + Math.random() * 0.15;
   return Math.floor(x);
+}
+
+function modifyStage(target, statKey, amount, say) {
+  if (!target.stages[statKey] && target.stages[statKey] !== 0) target.stages[statKey] = 0;
+  const old = target.stages[statKey];
+  target.stages[statKey] = Math.max(-6, Math.min(6, target.stages[statKey] + amount));
+  const diff = target.stages[statKey] - old;
+
+  const statNames = {
+    'attack': 'Attacco', 'defense': 'Difesa',
+    'special-attack': 'Attacco Sp.', 'special-defense': 'Difesa Sp.', 'speed': 'Velocità'
+  };
+
+  const label = statNames[statKey] || statKey;
+
+  if (diff > 0) {
+    say(nm(target) + ': ' + label + ' aumenta!');
+  } else if (diff < 0) {
+    say(nm(target) + ': ' + label + ' cala!');
+  } else {
+    say(nm(target) + ': ' + label + ' non può ' + (amount > 0 ? 'aumentare' : 'calare') + ' oltre!');
+  }
+}
+
+function applyAbilityOnEntry(mon, opp, say) {
+  if (mon.ability === 'intimidate' && opp.hp > 0) {
+    say('L\'abilità Prepotenza di ' + nm(mon) + ' riduce l\'Attacco avversario!');
+    modifyStage(opp, 'attack', -1, say);
+  }
 }
 
 function chooseNpc(a, d) {
@@ -388,6 +465,17 @@ function npcTeam(L, n) {
 
 function tagHtml(t) { return '<span class="tag">' + tn(t) + '</span>'; }
 
+function formatStages(stages) {
+  const active = [];
+  const statNames = { 'attack': 'Atk', 'defense': 'Def', 'special-attack': 'SpA', 'special-defense': 'SpD', 'speed': 'Spe' };
+  for (const k in stages) {
+    if (stages[k] !== 0) {
+      active.push(statNames[k] + (stages[k] > 0 ? '+' : '') + stages[k]);
+    }
+  }
+  return active.length ? '<div class="stat-stages">' + active.join(' | ') + '</div>' : '';
+}
+
 function panel(m, label) {
   const itemInfo = m.heldItem && D.items[m.heldItem] ? D.items[m.heldItem].name_it : null;
   return '<div class="mon">' +
@@ -395,7 +483,9 @@ function panel(m, label) {
     '<img src="' + (D.pokemon[m.name].sprite || '') + '" alt="' + nm(m) + '">' +
     '<div><b>' + nm(m) + '</b> <span class="mut">Lv ' + m.L + '</span></div>' +
     '<div>' + m.types.map(tagHtml).join('') + '</div>' +
+    '<div class="ability-badge">⚡ ' + (m.ability || 'Nessuna') + '</div>' +
     (itemInfo ? '<div class="held-badge">🎒 ' + itemInfo + '</div>' : '') +
+    formatStages(m.stages) +
     '<div class="bar"><i style="width:' + Math.max(0, 100 * m.hp / m.s.hp) + '%"></i></div>' +
     '<div class="mut" style="margin-top:4px">' + m.hp + '/' + m.s.hp + ' PS</div>' +
   '</div>';
@@ -414,8 +504,7 @@ function home() {
       '<h2 style="text-align:center;margin-bottom:8px">📜 REGOLAMENTO DI GIOCO</h2>' +
       '<p>🏆 <b>Obiettivo:</b> Scegli il tuo tipo elementale e sali fino al <b>Livello 100</b> per diventare il Campione Assoluto della Lega Pokémon!</p>' +
       '<p>⚔️ <b>Lotte:</b> Vinci le sfide per salire di livello; la sconfitta ti fa retrocedere.</p>' +
-      '<p>🔄 <b>Scambi:</b> Ogni 7-8 livelli potresti ricevere una proposta di scambio per la tua squadra!</p>' +
-      '<p>🎒 <b>Strumenti:</b> Equipaggia la tua squadra con oggetti strategici per vincere le lotte.</p>' +
+      '<p>✨ <b>Abilità e Statistiche:</b> Sfrutta le abilità uniche dei Pokémon e i cambi di statistiche in lotta!</p>' +
     '</div>' +
     (saved ? '<div style="text-align:center;margin-bottom:20px"><button id="cont" style="width:100%">Continua Run (' + tn(saved.type) + ' — Lvl ' + saved.level + ')</button></div>' : '') +
     '<h2>Scegli il tuo Tipo Specializzato:</h2>' +
@@ -453,10 +542,12 @@ function starters(type) {
 
   document.querySelectorAll('[data-n]').forEach(function(b) {
     b.onclick = function() {
+      const pData = D.pokemon[b.dataset.n];
+      const ability = pData.abilities && pData.abilities.length ? rnd(pData.abilities) : null;
       run = {
         type: type,
         level: 1,
-        team: [{ name: b.dataset.n, nat: rnd(D.natures).name, currentHp: null, heldItem: null }],
+        team: [{ name: b.dataset.n, nat: rnd(D.natures).name, currentHp: null, heldItem: null, ability: ability }],
         taken: [],
         items: { potion: 2, leftovers: 1 },
         nextTrade: 7 + Math.floor(Math.random() * 2)
@@ -493,7 +584,7 @@ function hub(msg) {
   });
 
   if (ev) saveRun();
-  const team = run.team.map(function(t) { return mk(t.name, L, t.nat, t.currentHp, t.heldItem); });
+  const team = run.team.map(function(t) { return mk(t.name, L, t.nat, t.currentHp, t.heldItem, t.ability); });
 
   let fieldHtml = '';
   team.forEach(function(m, i) { fieldHtml += panel(m, i === 0 ? '1° In Campo' : 'Panchina'); });
@@ -528,14 +619,14 @@ function hub(msg) {
 function organizeTeam() {
   let itemsHtml = '';
   run.team.forEach(function(t, index) {
-    const fullMon = mk(t.name, run.level, t.nat, t.currentHp, t.heldItem);
+    const fullMon = mk(t.name, run.level, t.nat, t.currentHp, t.heldItem, t.ability);
     const itemObj = t.heldItem && D.items[t.heldItem] ? D.items[t.heldItem] : null;
     itemsHtml += '<div class="team-list-item">' +
       '<div style="display:flex;align-items:center;gap:10px">' +
         '<img src="' + (D.pokemon[t.name].sprite || '') + '" width="48" alt="">' +
         '<div>' +
           '<div><b>' + (index + 1) + '. ' + D.pokemon[t.name].name_it + '</b></div>' +
-          '<div class="mut">' + fullMon.hp + '/' + fullMon.s.hp + ' PS</div>' +
+          '<div class="mut">' + fullMon.hp + '/' + fullMon.s.hp + ' PS | Abilità: ' + (t.ability || 'Nessuna') + '</div>' +
           (itemObj ? '<div class="held-badge">🎒 ' + itemObj.name_it + '</div>' : '') +
         '</div>' +
       '</div>' +
@@ -610,7 +701,7 @@ window.useOrEquipItem = function(itemKey) {
 
   let html = '<h1>' + (itemInfo.category === 'held' ? 'ASSEGNA STRUMENTO' : 'USA STRUMENTO') + '</h1><div style="margin:20px 0">';
   run.team.forEach(function(t, idx) {
-    const fullMon = mk(t.name, run.level, t.nat, t.currentHp, t.heldItem);
+    const fullMon = mk(t.name, run.level, t.nat, t.currentHp, t.heldItem, t.ability);
     const currItem = t.heldItem ? (D.items[t.heldItem] ? D.items[t.heldItem].name_it : t.heldItem) : 'Nessuno';
     html += '<div class="team-list-item">' +
       '<div style="display:flex;align-items:center;gap:10px">' +
@@ -651,11 +742,16 @@ function startBattle() {
   saveRun();
 
   B = {
-    me: run.team.map(function(t) { return mk(t.name, L, t.nat, null, t.heldItem); }),
+    me: run.team.map(function(t) { return mk(t.name, L, t.nat, null, t.heldItem, t.ability); }),
     fo: npcTeam(L, run.team.length),
     mi: 0, fi: 0, over: null,
     log: ['Uno sfidante ti sfida!']
   };
+
+  function say(t) { B.log.push(t); }
+  applyAbilityOnEntry(B.me[0], B.fo[0], say);
+  applyAbilityOnEntry(B.fo[0], B.me[0], say);
+
   fight();
 }
 
@@ -694,7 +790,6 @@ function fight() {
   }
 }
 
-// Controllo unico dei KO per evitare blocchi da danni passivi
 function checkFaint(say) {
   const me = B.me[B.mi];
   const fo = B.fo[B.fi];
@@ -704,6 +799,7 @@ function checkFaint(say) {
     if (B.fi < B.fo.length - 1) {
       B.fi++;
       say('L\'avversario manda in campo ' + nm(B.fo[B.fi]) + '!');
+      applyAbilityOnEntry(B.fo[B.fi], B.me[B.mi], say);
     } else {
       B.over = 'win';
       return true;
@@ -715,6 +811,7 @@ function checkFaint(say) {
     if (B.mi < B.me.length - 1) {
       B.mi++;
       say('Vai, ' + nm(B.me[B.mi]) + '!');
+      applyAbilityOnEntry(B.me[B.mi], B.fo[B.fi], say);
     } else {
       B.over = 'lose';
       return true;
@@ -734,7 +831,9 @@ function turn(mi) {
   ];
 
   order.sort(function(x, y) {
-    return (y[2].priority - x[2].priority) || (y[0].s.speed - x[0].s.speed) || (Math.random() - 0.5);
+    const spdA = getStat(x[0], 'speed');
+    const spdB = getStat(y[0], 'speed');
+    return (y[2].priority - x[2].priority) || (spdB - spdA) || (Math.random() - 0.5);
   });
 
   for (const item of order) {
@@ -771,7 +870,15 @@ function turn(mi) {
 
     if (checkFaint(say)) break;
 
-    // Effetti passivi da contatto
+    // Danni da abilità da contatto (Iron Barbs / Rough Skin)
+    if (m.damage_class === 'physical' && (d.ability === 'iron-barbs' || d.ability === 'rough-skin') && a.hp > 0) {
+      const rec = Math.floor(a.s.hp / 8);
+      a.hp = Math.max(0, a.hp - rec);
+      say(nm(a) + ' subisce danni dall\'abilità di ' + nm(d) + '!');
+      if (checkFaint(say)) break;
+    }
+
+    // Effetti passivi strumenti da contatto
     if (m.damage_class === 'physical' && d.heldItem === 'rocky-helmet' && a.hp > 0) {
       const rec = Math.floor(a.s.hp / 6);
       a.hp = Math.max(0, a.hp - rec);
@@ -811,7 +918,6 @@ function endBattle() {
   run.level = win ? run.level + 1 : Math.max(1, run.level - 1);
   const cap = win && CAP.find(function(c) { return run.level >= c && !run.taken.includes(c); });
 
-  // Evento di scambio Pokémon
   if (win && run.level >= (run.nextTrade || 7)) {
     run.nextTrade = run.level + 7 + Math.floor(Math.random() * 2);
     saveRun();
@@ -871,16 +977,19 @@ window.executeTrade = function(teamIndex, newMonName) {
   const oldName = D.pokemon[run.team[teamIndex].name].name_it;
   const heldItem = run.team[teamIndex].heldItem;
 
-  // Se il Pokémon ceduto aveva un oggetto, viene restituito allo Zaino
   if (heldItem) {
     run.items[heldItem] = (run.items[heldItem] || 0) + 1;
   }
+
+  const pData = D.pokemon[newMonName];
+  const newAbility = pData.abilities && pData.abilities.length ? rnd(pData.abilities) : null;
 
   run.team[teamIndex] = {
     name: newMonName,
     nat: rnd(D.natures).name,
     currentHp: null,
-    heldItem: null
+    heldItem: null,
+    ability: newAbility
   };
 
   saveRun();
@@ -913,7 +1022,9 @@ function capture(extraMsg) {
 
   document.querySelectorAll('[data-n]').forEach(function(b) {
     b.onclick = function() {
-      run.team.push({ name: b.dataset.n, nat: rnd(D.natures).name, currentHp: null, heldItem: null });
+      const pData = D.pokemon[b.dataset.n];
+      const ability = pData.abilities && pData.abilities.length ? rnd(pData.abilities) : null;
+      run.team.push({ name: b.dataset.n, nat: rnd(D.natures).name, currentHp: null, heldItem: null, ability: ability });
       saveRun();
       hub('Nuovo compagno aggiunto! ' + extraMsg);
     };

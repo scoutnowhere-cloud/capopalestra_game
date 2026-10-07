@@ -266,7 +266,7 @@ button.btn-sec:hover {
 <header>
   <div class="brand-title">⚡ PokéLeader</div>
   <div class="lang-selector">
-    <button id="lang-it" onclick="setLang('it')">🇮🇹</button>
+    <button id="lang-it" class="active" onclick="setLang('it')">🇮🇹</button>
     <button id="lang-en" onclick="setLang('en')">🇬🇧</button>
     <button id="lang-es" onclick="setLang('es')">🇪🇸</button>
   </div>
@@ -377,7 +377,8 @@ let B = null;
 function setLang(lang) {
   currentLang = lang;
   document.querySelectorAll('.lang-selector button').forEach(b => b.classList.remove('active'));
-  getEl('#lang-' + lang).classList.add('active');
+  const btn = getEl('#lang-' + lang);
+  if (btn) btn.classList.add('active');
   if (run) hub(); else home();
 }
 
@@ -387,10 +388,15 @@ function app() { return document.querySelector('#app'); }
 function rnd(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
 function shuffle(arr) { return [...arr].sort(() => Math.random() - 0.5); }
 
+// Estrazione universale e sicura del nome con fallback
 function locName(obj) {
   if (!obj) return '';
   if (obj.names && obj.names[currentLang]) return obj.names[currentLang];
-  return obj.name || '';
+  if (obj.names && obj.names.it) return obj.names.it;
+  if (obj.names && obj.names.en) return obj.names.en;
+  if (obj.name_it) return obj.name_it;
+  if (obj.name) return obj.name.charAt(0).toUpperCase() + obj.name.slice(1);
+  return '';
 }
 
 function phase(level) {
@@ -399,12 +405,16 @@ function phase(level) {
   return match ? match[2] : 'Final Challenge';
 }
 
-function tn(type) {
-  const match = D.types.find(x => x.name === type);
-  return match ? locName(match) : type;
+function tn(typeKey) {
+  if (!D.types) return typeKey;
+  const match = D.types.find(x => x.name === typeKey);
+  return match ? locName(match) : typeKey;
 }
 
-function nm(mon) { return locName(D.pokemon[mon.name]); }
+function nm(mon) { 
+  if (!D.pokemon || !D.pokemon[mon.name]) return mon.name;
+  return locName(D.pokemon[mon.name]); 
+}
 
 function saveRun() {
   try { localStorage.setItem('run', JSON.stringify(run)); } catch (e) { console.error(e); }
@@ -419,7 +429,7 @@ function minLevel(name) {
   if (memo[name] !== undefined) return memo[name];
   const p = D.pokemon[name];
   let v = 1;
-  if (p.evolves_from && D.pokemon[p.evolves_from]) {
+  if (p && p.evolves_from && D.pokemon[p.evolves_from]) {
     const d = p.evolution_details || {};
     v = Math.max(minLevel(p.evolves_from), d.min_level || (p.stage >= 2 ? 40 : 25));
   }
@@ -432,17 +442,23 @@ function eligible(p, L) {
 }
 
 function evolved(name, L) {
-  for (const t of D.pokemon[name].evolves_to) {
+  const p = D.pokemon[name];
+  if (!p || !p.evolves_to) return name;
+  for (const t of p.evolves_to) {
     const e = D.pokemon[t];
-    const d = e.evolution_details || {};
-    if (d.min_level && d.min_level <= L && !e.is_legendary) {
-      return evolved(t, L);
+    if (e) {
+      const d = e.evolution_details || {};
+      if (d.min_level && d.min_level <= L && !e.is_legendary) {
+        return evolved(t, L);
+      }
     }
   }
   return name;
 }
 
 function pickMoves(p, L) {
+  if (!p.levelup_moves) return [D.moves.tackle || { name: 'tackle', names: { it: 'Azione' }, power: 40, type: 'normal' }];
+  
   const candidates = Object.entries(p.levelup_moves)
     .filter(([mName, lvl]) => lvl <= L && D.moves[mName] && !BAN.has(mName))
     .map(([mName]) => D.moves[mName]);
@@ -465,11 +481,12 @@ function stageMult(stage) {
 
 function mk(name, L, natName, currentHp, heldItem, ability) {
   const p = D.pokemon[name];
-  const nat = D.natures.find(n => n.name === natName) || rnd(D.natures);
+  const nat = (D.natures && D.natures.find(n => n.name === natName)) || (D.natures ? D.natures[0] : { name: natName });
   const s = {};
 
   for (const k of STATS) {
-    const core = Math.floor((2 * p.base_stats[k] + 15) * L / 100);
+    const baseVal = (p && p.base_stats && p.base_stats[k]) ? p.base_stats[k] : 50;
+    const core = Math.floor((2 * baseVal + 15) * L / 100);
     if (k === 'hp') {
       s.hp = core + L + 10;
     } else {
@@ -483,7 +500,7 @@ function mk(name, L, natName, currentHp, heldItem, ability) {
   if (heldItem === 'choice-specs') s['special-attack'] = Math.floor(s['special-attack'] * 1.5);
   if (heldItem === 'assault-vest') s['special-defense'] = Math.floor(s['special-defense'] * 1.5);
 
-  const chosenAbility = ability || (p.abilities && p.abilities.length ? rnd(p.abilities) : 'nessuna');
+  const chosenAbility = ability || (p && p.abilities && p.abilities.length ? rnd(p.abilities) : 'nessuna');
   const maxHp = s.hp;
   const hpVal = (currentHp !== undefined && currentHp !== null) ? Math.min(currentHp, maxHp) : maxHp;
 
@@ -492,13 +509,13 @@ function mk(name, L, natName, currentHp, heldItem, ability) {
     L: L,
     nat: nat.name,
     natObj: nat,
-    types: p.types,
+    types: p ? p.types : ['normal'],
     s: s,
     hp: hpVal,
     heldItem: heldItem || null,
     ability: chosenAbility,
     stages: { attack: 0, defense: 0, 'special-attack': 0, 'special-defense': 0, speed: 0 },
-    moves: pickMoves(p, L)
+    moves: p ? pickMoves(p, L) : []
   };
 }
 
@@ -511,7 +528,7 @@ function mult(mt, d) {
 }
 
 function getStat(m, statKey) {
-  const base = m.s[statKey];
+  const base = m.s[statKey] || 50;
   const stage = m.stages[statKey] || 0;
   return Math.floor(base * stageMult(stage));
 }
@@ -566,7 +583,7 @@ function chooseNpc(a, d) {
     if (m.power) {
       v = dmg(a, d, m, false) * ((m.accuracy || 100) / 100);
     } else {
-      v = 15; // Valore euristico per mosse di stato
+      v = 15;
     }
     if (v > bv + 1e-9) { bv = v; best = [m]; }
     else if (Math.abs(v - bv) < 1e-9) { best.push(m); }
@@ -607,7 +624,7 @@ function panel(m, label) {
 
   return '<div class="mon">' +
     '<div class="mut">' + (label || '') + '</div>' +
-    '<img src="' + (D.pokemon[m.name].sprite || '') + '" alt="' + nm(m) + '">' +
+    '<img src="' + (D.pokemon[m.name] ? D.pokemon[m.name].sprite : '') + '" alt="' + nm(m) + '">' +
     '<div><b>' + nm(m) + '</b> <span class="mut">Lv ' + m.L + '</span></div>' +
     '<div>' + m.types.map(tagHtml).join('') + '</div>' +
     '<div class="nature-badge">🌱 ' + natInfo + '</div> ' +
@@ -622,8 +639,10 @@ function panel(m, label) {
 function home() {
   const saved = loadRun();
   let typesHtml = '';
-  for (const t of D.types) {
-    typesHtml += '<button data-t="' + t.name + '">' + locName(t) + '</button>';
+  if (D.types) {
+    for (const t of D.types) {
+      typesHtml += '<button data-t="' + t.name + '">' + locName(t) + '</button>';
+    }
   }
 
   app().innerHTML =
@@ -686,7 +705,7 @@ function starters(type) {
 }
 
 function selectNatureForMon(monName, onSelectCallback) {
-  const nats = shuffle(D.natures).slice(0, 3);
+  const nats = shuffle(D.natures || []).slice(0, 3);
   let natsHtml = '';
 
   nats.forEach(n => {
@@ -700,9 +719,10 @@ function selectNatureForMon(monName, onSelectCallback) {
     '</div>';
   });
 
+  const pObj = D.pokemon[monName];
   app().innerHTML =
     '<h1>' + tTxt('chooseNature') + '</h1>' +
-    '<p class="mut" style="text-align:center">' + tTxt('natureDesc') + '<b>' + locName(D.pokemon[monName]) + '</b></p>' +
+    '<p class="mut" style="text-align:center">' + tTxt('natureDesc') + '<b>' + (pObj ? locName(pObj) : monName) + '</b></p>' +
     '<div style="margin:20px 0">' + natsHtml + '</div>';
 
   document.querySelectorAll('[data-nat]').forEach(b => {
@@ -774,7 +794,7 @@ function organizeTeam() {
     const itemObj = t.heldItem && D.items[t.heldItem] ? D.items[t.heldItem] : null;
     itemsHtml += '<div class="team-list-item">' +
       '<div style="display:flex;align-items:center;gap:10px">' +
-        '<img src="' + (D.pokemon[t.name].sprite || '') + '" width="48" alt="">' +
+        '<img src="' + (D.pokemon[t.name] ? D.pokemon[t.name].sprite : '') + '" width="48" alt="">' +
         '<div>' +
           '<div><b>' + (index + 1) + '. ' + locName(D.pokemon[t.name]) + '</b></div>' +
           '<div class="mut">' + fullMon.hp + '/' + fullMon.s.hp + ' PS</div>' +
@@ -831,7 +851,7 @@ function openBag() {
       itemsHtml += '<div class="item-card">' +
         '<div>' +
           '<div><b>' + locName(info) + ' (x' + count + ')</b></div>' +
-          '<div class="mut" style="font-size:12px">' + (info.descs ? info.descs[currentLang] : '') + '</div>' +
+          '<div class="mut" style="font-size:12px">' + (info.descs ? info.descs[currentLang] || info.descs.it : '') + '</div>' +
         '</div>' +
         '<button onclick="useOrEquipItem(\'' + k + '\')">' + (info.category === 'held' ? 'Assegna' : 'Usa') + '</button>' +
       '</div>';
@@ -856,7 +876,7 @@ window.useOrEquipItem = function(itemKey) {
     const currItem = t.heldItem ? (D.items[t.heldItem] ? locName(D.items[t.heldItem]) : t.heldItem) : 'Nessuno';
     html += '<div class="team-list-item">' +
       '<div style="display:flex;align-items:center;gap:10px">' +
-        '<img src="' + (D.pokemon[t.name].sprite || '') + '" width="48" alt="">' +
+        '<img src="' + (D.pokemon[t.name] ? D.pokemon[t.name].sprite : '') + '" width="48" alt="">' +
         '<div><b>' + locName(D.pokemon[t.name]) + '</b><br><span class="mut">PS: ' + fullMon.hp + '/' + fullMon.s.hp + ' | Oggetto: ' + currItem + '</span></div>' +
       '</div>' +
       '<button onclick="applyItemToMon(\'' + itemKey + '\', ' + idx + ')">Seleziona</button>' +
@@ -1000,7 +1020,6 @@ function turn(mi) {
     }
 
     if (m.damage_class === 'status' || !m.power) {
-      // Gestione Mosse di Stato
       if (m.stat_changes && m.stat_changes.length) {
         m.stat_changes.forEach(sc => {
           const target = (m.target === 'user' || m.target === 'selected-pokemon-user') ? a : d;
@@ -1032,7 +1051,6 @@ function turn(mi) {
 
     if (checkFaint(say)) break;
 
-    // Danni da abilità da contatto
     if (m.damage_class === 'physical' && (d.ability === 'iron-barbs' || d.ability === 'rough-skin') && a.hp > 0) {
       const rec = Math.floor(a.s.hp / 8);
       a.hp = Math.max(0, a.hp - rec);
@@ -1040,7 +1058,6 @@ function turn(mi) {
       if (checkFaint(say)) break;
     }
 
-    // Effetti passivi strumenti
     if (m.damage_class === 'physical' && d.heldItem === 'rocky-helmet' && a.hp > 0) {
       const rec = Math.floor(a.s.hp / 6);
       a.hp = Math.max(0, a.hp - rec);
@@ -1113,7 +1130,7 @@ function triggerTradeOffer(extraMsg = '') {
   run.team.forEach((t, idx) => {
     teamOptions += '<div class="team-list-item">' +
       '<div style="display:flex;align-items:center;gap:10px">' +
-        '<img src="' + (D.pokemon[t.name].sprite || '') + '" width="48" alt="">' +
+        '<img src="' + (D.pokemon[t.name] ? D.pokemon[t.name].sprite : '') + '" width="48" alt="">' +
         '<div><b>' + locName(D.pokemon[t.name]) + '</b></div>' +
       '</div>' +
       '<button onclick="executeTrade(' + idx + ', \'' + offeredMon.name + '\')">Scambia</button>' +

@@ -1,0 +1,210 @@
+{
+  "potion": {
+    "id": 17,
+    "name": "potion",
+    "names": {
+      "it": "Pozione",
+      "en": "Potion",
+      "es": "Poción"
+    },
+    "category": "consumable",
+    "descs": {
+      "it": "Ripristina 20 PS ad un Pokémon.",
+      "en": "Restores 20 HP to a Pokémon.",
+      "es": "Restaura 20 PS a un Pokémon."
+    },
+    "sprite": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/potion.png"
+  },
+  "max-potion": {
+    "id": 24,
+    "name": "max-potion",
+    "names": {
+      "it": "Pozione Max",
+      "en": "Max Potion",
+      "es": "Poción Máxima"
+    },
+    "category": "consumable",
+    "descs": {
+      "it": "Ripristina tutti i PS ad un Pokémon.",
+      "en": "Fully restores HP of a Pokémon.",
+      "es": "Restaura tutti i PS di un Pokémon."
+    },
+    "sprite": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/max-potion.png"
+  },
+  "leftovers": {
+    "id": 211,
+    "name": "leftovers",
+    "names": {
+      "it": "Avanzi",
+      "en": "Leftovers",
+      "es": "Restos"
+    },
+    "category": "held",
+    "descs": {
+      "it": "Ripristina 1/16 dei PS alla fine di ogni turno.",
+      "en": "Restores 1/16 HP at the end of each turn.",
+      "es": "Recupera 1/16 de los PS al final de cada turno."
+    },
+    "sprite": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/leftovers.png"
+  },
+  "life-orb": {
+    "id": 247,
+    "name": "life-orb",
+    "names": {
+      "it": "Assorbisfera",
+      "en": "Life Orb",
+      "es": "Vidasfera"
+    },
+    "category": "held",
+    "descs": {
+      "it": "+30% danni inflitti, perde 10% PS a ogni attacco.",
+      "en": "+30% damage dealt, loses 10% HP per attack.",
+      "es": "+30% de daño infligido, pierde 10% PS por ataque."
+    },
+    "sprite": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/life-orb.png"
+  },
+  "choice-band": {
+    "id": 197,
+    "name": "choice-band",
+    "names": {
+      "it": "Banda Scelta",
+      "en": "Choice Band",
+      "es": "Cinta Elección"
+    },
+    "category": "held",
+    "descs": {
+      "it": "Aumenta l'Attacco del 50%.",
+      "en": "Boosts Attack by 50%.",
+      "es": "Aumenta el Ataque un 50%."
+    },
+    "sprite": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/choice-band.png"
+  },
+  "choice-specs": {
+    "id": 274,
+    "name": "choice-specs",
+    "names": {
+      "it": "Lenti Scelta",
+      "en": "Choice Specs",
+      "es": "Gafas Elección"
+    },
+    "category": "held",
+    "descs": {
+      "it": "Aumenta l'Attacco Speciale del 50%.",
+      "en": "Boosts Special Attack by 50%.",
+      "es": "Aumenta el Ataque Especial un 50%."
+    },
+    "sprite": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/choice-specs.png"
+  },
+  "choice-scarf": {
+    "id": 264,
+    "name": "choice-scarf",
+    "names": {
+      "it": "Stolascelta",
+      "en": "Choice Scarf",
+      "es": "Pañuelo Elección"
+    },
+    "category": "held",
+    "descs": {
+      "it": "Aumenta la Velocità del 50%.",
+      "en": "Boosts Speed by 50%.",
+      "es": "Aumenta la Velocidad un 50%."
+    },
+    "sprite": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/choice-scarf.png"
+  },
+  "eviolite": {
+    "id": 581,
+    "name": "eviolite",
+    "names": {
+      "it": "Evolcondensa",
+      "en": "Eviolite",
+      "es": "Mineral Evolutivo"
+    },
+    "category": "held",
+    "descs": {
+      "it": "+50% Difesa e Dif. Sp. per Pokémon non totalmente evoluti.",
+      "en": "+50% Def and Sp. Def for non-fully evolved Pokémon.",
+      "es": "+50% Defensa y Def. Esp. para Pokémon no evolucionados del todo."
+    },
+    "sprite": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/eviolite.png"
+  },
+  "focus-sash": {
+    "id": 252,
+    "name": "focus-sash",
+    "names": {
+      "it": "Focalnastro",
+      "en": "Focus Sash",
+      "es": "Banda Focus"
+    },
+    "category": "held",
+    "descs": {
+      "it": "Evita il KO in un colpo solo se a PS massimi.",
+      "en": "Saves from KO with 1 HP if at full HP.",
+      "es": "Evita el KO con 1 PS si tiene los PS al máximo."
+    },
+    "sprite": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/focus-sash.png"
+  },
+  "rocky-helmet": {
+    "id": 583,
+    "name": "rocky-helmet",
+    "names": {
+      "it": "Bitorzolelmo",
+      "en": "Rocky Helmet",
+      "es": "Casco Dentado"
+    },
+    "category": "held",
+    "descs": {
+      "it": "Danneggia l'aggressore su attacchi fisici subiti.",
+      "en": "Damages attacker upon receiving physical attacks.",
+      "es": "Daña al atacante al recibir ataques físicos."
+    },
+    "sprite": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/rocky-helmet.png"
+  },
+  "assault-vest": {
+    "id": 683,
+    "name": "assault-vest",
+    "names": {
+      "it": "Gilet d'Assalto",
+      "en": "Assault Vest",
+      "es": "Chaleco Asalto"
+    },
+    "category": "held",
+    "descs": {
+      "it": "Aumenta la Difesa Speciale del 50%.",
+      "en": "Boosts Special Defense by 50%.",
+      "es": "Aumenta la Defensa Especial un 50%."
+    },
+    "sprite": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/assault-vest.png"
+  },
+  "sitrus-berry": {
+    "id": 135,
+    "name": "sitrus-berry",
+    "names": {
+      "it": "sitrus-berry",
+      "en": "sitrus-berry",
+      "es": "sitrus-berry"
+    },
+    "category": "held",
+    "descs": {
+      "it": "",
+      "en": "",
+      "es": ""
+    },
+    "sprite": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/sitrus-berry.png"
+  },
+  "lum-berry": {
+    "id": 134,
+    "name": "lum-berry",
+    "names": {
+      "it": "lum-berry",
+      "en": "lum-berry",
+      "es": "lum-berry"
+    },
+    "category": "held",
+    "descs": {
+      "it": "",
+      "en": "",
+      "es": ""
+    },
+    "sprite": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/lum-berry.png"
+  }
+}

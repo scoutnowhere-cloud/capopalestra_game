@@ -1,0 +1,252 @@
+[
+  {
+    "name": "hardy",
+    "names": {
+      "it": "Ardita",
+      "en": "Hardy",
+      "es": "Fuerte"
+    },
+    "increases": null,
+    "decreases": null
+  },
+  {
+    "name": "bold",
+    "names": {
+      "it": "Sicura",
+      "en": "Bold",
+      "es": "Osada"
+    },
+    "increases": "defense",
+    "decreases": "attack"
+  },
+  {
+    "name": "modest",
+    "names": {
+      "it": "Modesta",
+      "en": "Modest",
+      "es": "Modesta"
+    },
+    "increases": "special-attack",
+    "decreases": "attack"
+  },
+  {
+    "name": "calm",
+    "names": {
+      "it": "Calma",
+      "en": "Calm",
+      "es": "Serena"
+    },
+    "increases": "special-defense",
+    "decreases": "attack"
+  },
+  {
+    "name": "timid",
+    "names": {
+      "it": "Timida",
+      "en": "Timid",
+      "es": "Miedosa"
+    },
+    "increases": "speed",
+    "decreases": "attack"
+  },
+  {
+    "name": "lonely",
+    "names": {
+      "it": "Schiva",
+      "en": "Lonely",
+      "es": "Huraña"
+    },
+    "increases": "attack",
+    "decreases": "defense"
+  },
+  {
+    "name": "docile",
+    "names": {
+      "it": "Docile",
+      "en": "Docile",
+      "es": "Dócil"
+    },
+    "increases": null,
+    "decreases": null
+  },
+  {
+    "name": "mild",
+    "names": {
+      "it": "Mite",
+      "en": "Mild",
+      "es": "Afable"
+    },
+    "increases": "special-attack",
+    "decreases": "defense"
+  },
+  {
+    "name": "gentle",
+    "names": {
+      "it": "Gentile",
+      "en": "Gentle",
+      "es": "Amable"
+    },
+    "increases": "special-defense",
+    "decreases": "defense"
+  },
+  {
+    "name": "hasty",
+    "names": {
+      "it": "Lesta",
+      "en": "Hasty",
+      "es": "Activa"
+    },
+    "increases": "speed",
+    "decreases": "defense"
+  },
+  {
+    "name": "adamant",
+    "names": {
+      "it": "Decisa",
+      "en": "Adamant",
+      "es": "Firme"
+    },
+    "increases": "attack",
+    "decreases": "special-attack"
+  },
+  {
+    "name": "impish",
+    "names": {
+      "it": "Scaltra",
+      "en": "Impish",
+      "es": "Agitada"
+    },
+    "increases": "defense",
+    "decreases": "special-attack"
+  },
+  {
+    "name": "bashful",
+    "names": {
+      "it": "Ritrosa",
+      "en": "Bashful",
+      "es": "Tímida"
+    },
+    "increases": null,
+    "decreases": null
+  },
+  {
+    "name": "careful",
+    "names": {
+      "it": "Cauta",
+      "en": "Careful",
+      "es": "Cauta"
+    },
+    "increases": "special-defense",
+    "decreases": "special-attack"
+  },
+  {
+    "name": "rash",
+    "names": {
+      "it": "Ardente",
+      "en": "Rash",
+      "es": "Alocada"
+    },
+    "increases": "special-attack",
+    "decreases": "special-defense"
+  },
+  {
+    "name": "jolly",
+    "names": {
+      "it": "Allegra",
+      "en": "Jolly",
+      "es": "Alegre"
+    },
+    "increases": "speed",
+    "decreases": "special-attack"
+  },
+  {
+    "name": "naughty",
+    "names": {
+      "it": "Birbona",
+      "en": "Naughty",
+      "es": "Pícara"
+    },
+    "increases": "attack",
+    "decreases": "special-defense"
+  },
+  {
+    "name": "lax",
+    "names": {
+      "it": "Fiacca",
+      "en": "Lax",
+      "es": "Floja"
+    },
+    "increases": "defense",
+    "decreases": "special-defense"
+  },
+  {
+    "name": "quirky",
+    "names": {
+      "it": "Furba",
+      "en": "Quirky",
+      "es": "Rara"
+    },
+    "increases": null,
+    "decreases": null
+  },
+  {
+    "name": "naive",
+    "names": {
+      "it": "Ingenua",
+      "en": "Naive",
+      "es": "Ingenua"
+    },
+    "increases": "speed",
+    "decreases": "special-defense"
+  },
+  {
+    "name": "brave",
+    "names": {
+      "it": "Audace",
+      "en": "Brave",
+      "es": "Audaz"
+    },
+    "increases": "attack",
+    "decreases": "speed"
+  },
+  {
+    "name": "relaxed",
+    "names": {
+      "it": "Placida",
+      "en": "Relaxed",
+      "es": "Plácida"
+    },
+    "increases": "defense",
+    "decreases": "speed"
+  },
+  {
+    "name": "quiet",
+    "names": {
+      "it": "Quieta",
+      "en": "Quiet",
+      "es": "Mansa"
+    },
+    "increases": "special-attack",
+    "decreases": "speed"
+  },
+  {
+    "name": "sassy",
+    "names": {
+      "it": "Vivace",
+      "en": "Sassy",
+      "es": "Grosera"
+    },
+    "increases": "special-defense",
+    "decreases": "speed"
+  },
+  {
+    "name": "serious",
+    "names": {
+      "it": "Seria",
+      "en": "Serious",
+      "es": "Seria"
+    },
+    "increases": null,
+    "decreases": null
+  }
+]

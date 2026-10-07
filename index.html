@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Capopalestra Pokémon</title>
+<title>PokéLeader - Browser Game</title>
 <link rel="icon" href="data:,">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -34,6 +34,44 @@ body {
   background-image: radial-gradient(#312e81 1.5px, transparent 1.5px);
   background-size: 24px 24px;
   min-height: 100vh;
+}
+
+header {
+  background: rgba(17, 14, 56, 0.95);
+  border-bottom: 3px solid var(--yellow);
+  padding: 12px 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+}
+
+.brand-title {
+  font-family: 'Press Start 2P', monospace;
+  color: var(--yellow);
+  font-size: 18px;
+  text-shadow: 2px 2px 0px #000;
+  margin: 0;
+}
+
+.lang-selector button {
+  padding: 4px 8px;
+  font-size: 14px;
+  border-radius: 8px;
+  border: 1px solid var(--yellow);
+  background: var(--bg-card);
+  color: #fff;
+  cursor: pointer;
+  margin-left: 4px;
+}
+
+.lang-selector button.active {
+  background: var(--yellow);
+  color: #000;
+  font-weight: bold;
 }
 
 main {
@@ -203,7 +241,7 @@ button.btn-sec:hover {
   align-items: center;
 }
 
-.held-badge, .ability-badge {
+.held-badge, .ability-badge, .nature-badge {
   font-size: 11px;
   background: var(--purple);
   color: #fff;
@@ -213,9 +251,8 @@ button.btn-sec:hover {
   display: inline-block;
 }
 
-.ability-badge {
-  background: #0284c7;
-}
+.ability-badge { background: #0284c7; }
+.nature-badge { background: #d97706; }
 
 .stat-stages {
   font-size: 11px;
@@ -225,14 +262,24 @@ button.btn-sec:hover {
 </style>
 </head>
 <body>
+
+<header>
+  <div class="brand-title">⚡ PokéLeader</div>
+  <div class="lang-selector">
+    <button id="lang-it" onclick="setLang('it')">🇮🇹</button>
+    <button id="lang-en" onclick="setLang('en')">🇬🇧</button>
+    <button id="lang-es" onclick="setLang('es')">🇪🇸</button>
+  </div>
+</header>
+
 <main id="app">Caricamento in corso...</main>
 
 <script>
 const STATS = ['hp', 'attack', 'defense', 'special-attack', 'special-defense', 'speed'];
 const LADDER = [
-  [1, 10, 'Allenatore Novizio'], [11, 20, '1ª Palestra'], [21, 30, '2ª Palestra'],
-  [31, 40, '3ª Palestra'], [41, 50, '4ª Palestra'], [51, 60, '5ª Palestra'],
-  [61, 70, '6ª Palestra'], [71, 80, '7ª Palestra'], [81, 90, '8ª Palestra'], [91, 99, 'Superquattro']
+  [1, 10, 'Novice'], [11, 20, 'Gym 1'], [21, 30, 'Gym 2'],
+  [31, 40, 'Gym 3'], [41, 50, 'Gym 4'], [51, 60, 'Gym 5'],
+  [61, 70, 'Gym 6'], [71, 80, 'Gym 7'], [81, 90, 'Gym 8'], [91, 99, 'Elite Four']
 ];
 const CAP = [10, 25, 45, 65, 85];
 const BAN = new Set([
@@ -244,27 +291,120 @@ const BAN = new Set([
   'freeze-shock', 'ice-burn', 'meteor-beam', 'electro-shot', 'sky-drop', 'synchronoise', 'struggle'
 ]);
 
+const I18N = {
+  it: {
+    ruleTitle: "📜 REGOLAMENTO DI GIOCO",
+    rule1: "🏆 <b>Obiettivo:</b> Sali fino al <b>Livello 100</b> e diventa il Campione della Lega Pokémon!",
+    rule2: "⚔️ <b>Lotte:</b> Vinci per salire di livello; la sconfitta ti fa retrocedere.",
+    rule3: "🌱 <b>Nature & Abilità:</b> Scegli la natura migliore per i tuoi Pokémon e usa le loro abilità passive.",
+    rule4: "💥 <b>Mosse di Stato:</b> Usa mosse come Danzaspada o Mugito per alterare le statistiche in battaglia!",
+    chooseType: "Scegli il tuo Tipo Specializzato:",
+    contRun: "Continua Avventura",
+    chooseStarter: "SCEGLI LO STARTER",
+    chooseNature: "SCEGLI LA NATURA",
+    natureDesc: "Scegli la natura per ",
+    goFight: "Lotta contro lo Sfidante",
+    manageTeam: "Gestisci Squadra",
+    bag: "Zaino",
+    abandon: "Abbandona",
+    victory: "👑 VITTORIA DEFINITIVA! 👑",
+    victoryDesc: "Complimenti! Hai raggiunto il <b>Livello 100</b> e sei diventato il <b>CAMPIONE ASSOLUTO DELLA LEGA</b>!",
+    newAv: "Inizia una Nuova Avventura",
+    tradeTitle: "🔄 PROPOSTA DI SCAMBIO!",
+    tradeDesc: "Un Allenatore ti offre ",
+    tradeFor: " in cambio di un tuo Pokémon!",
+    declineTrade: "Rifiuta lo Scambio",
+    newCapture: "NUOVA CATTURA!",
+    captureDesc: "Scegli un nuovo Pokémon per la tua palestra."
+  },
+  en: {
+    ruleTitle: "📜 GAME RULES",
+    rule1: "🏆 <b>Goal:</b> Reach <b>Level 100</b> and become the Pokémon League Champion!",
+    rule2: "⚔️ <b>Battles:</b> Win to level up; losing decreases your level.",
+    rule3: "🌱 <b>Natures & Abilities:</b> Pick the best nature for your Pokémon and leverage passive abilities.",
+    rule4: "💥 <b>Status Moves:</b> Use stat-altering moves like Swords Dance or Growl in battle!",
+    chooseType: "Choose your Specialized Type:",
+    contRun: "Continue Adventure",
+    chooseStarter: "CHOOSE YOUR STARTER",
+    chooseNature: "CHOOSE A NATURE",
+    natureDesc: "Pick a nature for ",
+    goFight: "Battle Challenger",
+    manageTeam: "Manage Team",
+    bag: "Bag",
+    abandon: "Forfeit",
+    victory: "👑 ULTIMATE VICTORY! 👑",
+    victoryDesc: "Congratulations! You reached <b>Level 100</b> and became the <b>POKÉMON LEAGUE CHAMPION</b>!",
+    newAv: "Start New Adventure",
+    tradeTitle: "🔄 TRADE OFFER!",
+    tradeDesc: "A Trainer offers you ",
+    tradeFor: " in exchange for one of your Pokémon!",
+    declineTrade: "Decline Trade",
+    newCapture: "NEW CATCH!",
+    captureDesc: "Choose a new Pokémon for your Gym."
+  },
+  es: {
+    ruleTitle: "📜 REGLAS DEL JUEGO",
+    rule1: "🏆 <b>Objetivo:</b> ¡Llega al <b>Nivel 100</b> y conviértete en el Campeón de la Liga!",
+    rule2: "⚔️ <b>Combates:</b> Gana para subir de nivel; perder te hará bajar.",
+    rule3: "🌱 <b>Naturalezas y Habilidades:</b> Elige la mejor naturaleza para tus Pokémon y aprovecha sus habilidades.",
+    rule4: "💥 <b>Movimientos de Estado:</b> ¡Usa movimientos de cambios de características en combate!",
+    chooseType: "Elige tu Tipo Especializado:",
+    contRun: "Continuar Aventura",
+    chooseStarter: "ELIGE TU STARTER",
+    chooseNature: "ELIGE UNA NATURALEZA",
+    natureDesc: "Elige la naturaleza para ",
+    goFight: "Luchar contra el Aspirante",
+    manageTeam: "Gestionar Equipo",
+    bag: "Mochila",
+    abandon: "Abandonar",
+    victory: "👑 ¡VICTORIA DEFINITIVA! 👑",
+    victoryDesc: "¡Felicidades! Has alcanzado el <b>Nivel 100</b> y eres el <b>CAMPEÓN ABSOLUTO DE LA LIGA</b>!",
+    newAv: "Empezar Nueva Aventura",
+    tradeTitle: "🔄 ¡PROPUESTA DE INTERCAMBIO!",
+    tradeDesc: "Un Entrenador te ofrece ",
+    tradeFor: " a cambio de uno de tus Pokémon!",
+    declineTrade: "Rechazar Intercambio",
+    newCapture: "¡NUEVA CAPTURA!",
+    captureDesc: "Elige un nuevo Pokémon para tu Gimnasio."
+  }
+};
+
+let currentLang = 'it';
 let D = {};
 let run = null;
 let B = null;
 
+function setLang(lang) {
+  currentLang = lang;
+  document.querySelectorAll('.lang-selector button').forEach(b => b.classList.remove('active'));
+  getEl('#lang-' + lang).classList.add('active');
+  if (run) hub(); else home();
+}
+
+function tTxt(key) { return (I18N[currentLang] || I18N.it)[key] || key; }
 function getEl(selector) { return document.querySelector(selector); }
 function app() { return document.querySelector('#app'); }
 function rnd(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
-function shuffle(arr) { return [...arr].sort(function() { return Math.random() - 0.5; }); }
+function shuffle(arr) { return [...arr].sort(() => Math.random() - 0.5); }
+
+function locName(obj) {
+  if (!obj) return '';
+  if (obj.names && obj.names[currentLang]) return obj.names[currentLang];
+  return obj.name || '';
+}
 
 function phase(level) {
-  if (level >= 100) return 'Campione Assoluto';
-  const match = LADDER.find(function(item) { return level >= item[0] && level <= item[1]; });
-  return match ? match[2] : 'Sfida Finale';
+  if (level >= 100) return 'Champion';
+  const match = LADDER.find(item => level >= item[0] && level <= item[1]);
+  return match ? match[2] : 'Final Challenge';
 }
 
 function tn(type) {
-  const match = D.types.find(function(x) { return x.name === type; });
-  return match ? match.name_it : type;
+  const match = D.types.find(x => x.name === type);
+  return match ? locName(match) : type;
 }
 
-function nm(mon) { return D.pokemon[mon.name].name_it; }
+function nm(mon) { return locName(D.pokemon[mon.name]); }
 
 function saveRun() {
   try { localStorage.setItem('run', JSON.stringify(run)); } catch (e) { console.error(e); }
@@ -280,7 +420,7 @@ function minLevel(name) {
   const p = D.pokemon[name];
   let v = 1;
   if (p.evolves_from && D.pokemon[p.evolves_from]) {
-    const d = p.evolution_details[0] || {};
+    const d = p.evolution_details || {};
     v = Math.max(minLevel(p.evolves_from), d.min_level || (p.stage >= 2 ? 40 : 25));
   }
   memo[name] = v;
@@ -294,7 +434,7 @@ function eligible(p, L) {
 function evolved(name, L) {
   for (const t of D.pokemon[name].evolves_to) {
     const e = D.pokemon[t];
-    const d = e.evolution_details[0] || {};
+    const d = e.evolution_details || {};
     if (d.min_level && d.min_level <= L && !e.is_legendary) {
       return evolved(t, L);
     }
@@ -304,16 +444,12 @@ function evolved(name, L) {
 
 function pickMoves(p, L) {
   const candidates = Object.entries(p.levelup_moves)
-    .filter(function(entry) {
-      const moveName = entry[0];
-      const levelNeeded = entry[1];
-      return levelNeeded <= L && D.moves[moveName] && D.moves[moveName].power && !BAN.has(moveName);
-    })
-    .map(function(entry) { return D.moves[entry[0]]; });
+    .filter(([mName, lvl]) => lvl <= L && D.moves[mName] && !BAN.has(mName))
+    .map(([mName]) => D.moves[mName]);
 
-  candidates.sort(function(a, b) {
-    const scoreA = (a.power || 0) * (p.types.includes(a.type) ? 1.5 : 1);
-    const scoreB = (b.power || 0) * (p.types.includes(b.type) ? 1.5 : 1);
+  candidates.sort((a, b) => {
+    const scoreA = (a.power || 20) * (p.types.includes(a.type) ? 1.5 : 1);
+    const scoreB = (b.power || 20) * (p.types.includes(b.type) ? 1.5 : 1);
     return scoreB - scoreA;
   });
 
@@ -329,7 +465,7 @@ function stageMult(stage) {
 
 function mk(name, L, natName, currentHp, heldItem, ability) {
   const p = D.pokemon[name];
-  const nat = D.natures.find(function(n) { return n.name === natName; }) || rnd(D.natures);
+  const nat = D.natures.find(n => n.name === natName) || rnd(D.natures);
   const s = {};
 
   for (const k of STATS) {
@@ -346,33 +482,29 @@ function mk(name, L, natName, currentHp, heldItem, ability) {
   if (heldItem === 'choice-band') s.attack = Math.floor(s.attack * 1.5);
   if (heldItem === 'choice-specs') s['special-attack'] = Math.floor(s['special-attack'] * 1.5);
   if (heldItem === 'assault-vest') s['special-defense'] = Math.floor(s['special-defense'] * 1.5);
-  if (heldItem === 'eviolite' && p.evolves_to && p.evolves_to.length > 0) {
-    s.defense = Math.floor(s.defense * 1.5);
-    s['special-defense'] = Math.floor(s['special-defense'] * 1.5);
-  }
 
   const chosenAbility = ability || (p.abilities && p.abilities.length ? rnd(p.abilities) : 'nessuna');
-
   const maxHp = s.hp;
   const hpVal = (currentHp !== undefined && currentHp !== null) ? Math.min(currentHp, maxHp) : maxHp;
-  
-  return { 
-    name: name, 
-    L: L, 
-    nat: nat.name, 
-    types: p.types, 
-    s: s, 
-    hp: hpVal, 
-    heldItem: heldItem || null, 
+
+  return {
+    name: name,
+    L: L,
+    nat: nat.name,
+    natObj: nat,
+    types: p.types,
+    s: s,
+    hp: hpVal,
+    heldItem: heldItem || null,
     ability: chosenAbility,
     stages: { attack: 0, defense: 0, 'special-attack': 0, 'special-defense': 0, speed: 0 },
-    moves: pickMoves(p, L) 
+    moves: pickMoves(p, L)
   };
 }
 
 function mult(mt, d) {
   if (d.ability === 'levitate' && mt === 'ground') return 0;
-  return d.types.reduce(function(a, t) {
+  return d.types.reduce((a, t) => {
     const eff = (D.eff[mt] || {})[t];
     return a * (eff !== undefined ? eff : 1);
   }, 1);
@@ -384,17 +516,14 @@ function getStat(m, statKey) {
   return Math.floor(base * stageMult(stage));
 }
 
-function dmg(a, d, m, rand) {
-  if (rand === undefined) rand = true;
+function dmg(a, d, m, rand = true) {
   if (!m.power) return 0;
   const ph = m.damage_class === 'physical';
   const A = getStat(a, ph ? 'attack' : 'special-attack');
   const De = getStat(d, ph ? 'defense' : 'special-defense');
   let x = Math.floor(Math.floor(Math.floor(2 * a.L / 5 + 2) * m.power * A / De) / 50) + 2;
-  
+
   let typeMult = a.types.includes(m.type) ? 1.5 : 1;
-  
-  // Abilità: Torrent, Blaze, Overgrow
   if (a.hp <= a.s.hp / 3) {
     if ((a.ability === 'torrent' && m.type === 'water') ||
         (a.ability === 'blaze' && m.type === 'fire') ||
@@ -415,25 +544,16 @@ function modifyStage(target, statKey, amount, say) {
   target.stages[statKey] = Math.max(-6, Math.min(6, target.stages[statKey] + amount));
   const diff = target.stages[statKey] - old;
 
-  const statNames = {
-    'attack': 'Attacco', 'defense': 'Difesa',
-    'special-attack': 'Attacco Sp.', 'special-defense': 'Difesa Sp.', 'speed': 'Velocità'
-  };
-
+  const statNames = { 'attack': 'Attacco', 'defense': 'Difesa', 'special-attack': 'Attacco Sp.', 'special-defense': 'Difesa Sp.', 'speed': 'Velocità' };
   const label = statNames[statKey] || statKey;
 
-  if (diff > 0) {
-    say(nm(target) + ': ' + label + ' aumenta!');
-  } else if (diff < 0) {
-    say(nm(target) + ': ' + label + ' cala!');
-  } else {
-    say(nm(target) + ': ' + label + ' non può ' + (amount > 0 ? 'aumentare' : 'calare') + ' oltre!');
-  }
+  if (diff > 0) say(nm(target) + ': ' + label + ' ↑!');
+  else if (diff < 0) say(nm(target) + ': ' + label + ' ↓!');
 }
 
 function applyAbilityOnEntry(mon, opp, say) {
   if (mon.ability === 'intimidate' && opp.hp > 0) {
-    say('L\'abilità Prepotenza di ' + nm(mon) + ' riduce l\'Attacco avversario!');
+    say('Prepotenza di ' + nm(mon) + '!');
     modifyStage(opp, 'attack', -1, say);
   }
 }
@@ -442,7 +562,12 @@ function chooseNpc(a, d) {
   let best = [];
   let bv = -1;
   for (const m of a.moves) {
-    const v = dmg(a, d, m, false) * ((m.accuracy || 100) / 100);
+    let v = 0;
+    if (m.power) {
+      v = dmg(a, d, m, false) * ((m.accuracy || 100) / 100);
+    } else {
+      v = 15; // Valore euristico per mosse di stato
+    }
     if (v > bv + 1e-9) { bv = v; best = [m]; }
     else if (Math.abs(v - bv) < 1e-9) { best.push(m); }
   }
@@ -450,11 +575,11 @@ function chooseNpc(a, d) {
 }
 
 function npcTeam(L, n) {
-  const pool = Object.values(D.pokemon).filter(function(p) { return eligible(p, L); });
+  const pool = Object.values(D.pokemon).filter(p => eligible(p, L));
   const team = [];
   const used = new Set();
   for (let i = 0; i < n; i++) {
-    let c = pool.filter(function(p) { return !used.has(p.types[0]); });
+    let c = pool.filter(p => !used.has(p.types[0]));
     if (!c.length) c = pool;
     const p = rnd(c);
     used.add(p.types[0]);
@@ -477,12 +602,15 @@ function formatStages(stages) {
 }
 
 function panel(m, label) {
-  const itemInfo = m.heldItem && D.items[m.heldItem] ? D.items[m.heldItem].name_it : null;
+  const itemInfo = m.heldItem && D.items[m.heldItem] ? locName(D.items[m.heldItem]) : null;
+  const natInfo = m.natObj ? locName(m.natObj) : m.nat;
+
   return '<div class="mon">' +
     '<div class="mut">' + (label || '') + '</div>' +
     '<img src="' + (D.pokemon[m.name].sprite || '') + '" alt="' + nm(m) + '">' +
     '<div><b>' + nm(m) + '</b> <span class="mut">Lv ' + m.L + '</span></div>' +
     '<div>' + m.types.map(tagHtml).join('') + '</div>' +
+    '<div class="nature-badge">🌱 ' + natInfo + '</div> ' +
     '<div class="ability-badge">⚡ ' + (m.ability || 'Nessuna') + '</div>' +
     (itemInfo ? '<div class="held-badge">🎒 ' + itemInfo + '</div>' : '') +
     formatStages(m.stages) +
@@ -495,23 +623,24 @@ function home() {
   const saved = loadRun();
   let typesHtml = '';
   for (const t of D.types) {
-    typesHtml += '<button data-t="' + t.name + '">' + t.name_it + '</button>';
+    typesHtml += '<button data-t="' + t.name + '">' + locName(t) + '</button>';
   }
 
   app().innerHTML =
-    '<h1>CAPOPALESTRA</h1>' +
+    '<h1>POKÉLEADER</h1>' +
     '<div class="intro-box">' +
-      '<h2 style="text-align:center;margin-bottom:8px">📜 REGOLAMENTO DI GIOCO</h2>' +
-      '<p>🏆 <b>Obiettivo:</b> Scegli il tuo tipo elementale e sali fino al <b>Livello 100</b> per diventare il Campione Assoluto della Lega Pokémon!</p>' +
-      '<p>⚔️ <b>Lotte:</b> Vinci le sfide per salire di livello; la sconfitta ti fa retrocedere.</p>' +
-      '<p>✨ <b>Abilità e Statistiche:</b> Sfrutta le abilità uniche dei Pokémon e i cambi di statistiche in lotta!</p>' +
+      '<h2 style="text-align:center;margin-bottom:8px">' + tTxt('ruleTitle') + '</h2>' +
+      '<p>' + tTxt('rule1') + '</p>' +
+      '<p>' + tTxt('rule2') + '</p>' +
+      '<p>' + tTxt('rule3') + '</p>' +
+      '<p>' + tTxt('rule4') + '</p>' +
     '</div>' +
-    (saved ? '<div style="text-align:center;margin-bottom:20px"><button id="cont" style="width:100%">Continua Run (' + tn(saved.type) + ' — Lvl ' + saved.level + ')</button></div>' : '') +
-    '<h2>Scegli il tuo Tipo Specializzato:</h2>' +
+    (saved ? '<div style="text-align:center;margin-bottom:20px"><button id="cont" style="width:100%">' + tTxt('contRun') + ' (' + tn(saved.type) + ' — Lvl ' + saved.level + ')</button></div>' : '') +
+    '<h2>' + tTxt('chooseType') + '</h2>' +
     '<div class="grid">' + typesHtml + '</div>';
 
   if (saved) {
-    getEl('#cont').onclick = function() {
+    getEl('#cont').onclick = () => {
       run = saved;
       if (!run.items) run.items = { potion: 1, leftovers: 1 };
       if (!run.nextTrade) run.nextTrade = run.level + Math.floor(Math.random() * 2) + 7;
@@ -519,75 +648,97 @@ function home() {
     };
   }
 
-  document.querySelectorAll('[data-t]').forEach(function(b) {
-    b.onclick = function() { starters(b.dataset.t); };
+  document.querySelectorAll('[data-t]').forEach(b => {
+    b.onclick = () => starters(b.dataset.t);
   });
 }
 
 function starters(type) {
-  const pool = Object.values(D.pokemon).filter(function(p) {
-    return p.stage === 0 && !p.is_legendary && !p.is_mythical && !p.is_baby && p.types.includes(type);
-  });
+  const pool = Object.values(D.pokemon).filter(p => p.stage === 0 && !p.is_legendary && !p.is_mythical && !p.is_baby && p.types.includes(type));
   const opts = shuffle(pool).slice(0, 3);
 
   let optsHtml = '';
   for (const p of opts) {
-    optsHtml += '<button data-n="' + p.name + '"><img src="' + (p.sprite || '') + '" width="72" alt=""><br><b>' + p.name_it + '</b></button>';
+    optsHtml += '<button data-n="' + p.name + '"><img src="' + (p.sprite || '') + '" width="72" alt=""><br><b>' + locName(p) + '</b></button>';
   }
 
   app().innerHTML =
-    '<h1>SCEGLI LO STARTER</h1>' +
-    '<p class="mut" style="text-align:center">Scegli il tuo primo Pokémon per la palestra ' + tn(type) + '.</p>' +
+    '<h1>' + tTxt('chooseStarter') + '</h1>' +
+    '<p class="mut" style="text-align:center">' + tTxt('chooseType') + ' ' + tn(type) + '</p>' +
     '<div class="grid">' + optsHtml + '</div>';
 
-  document.querySelectorAll('[data-n]').forEach(function(b) {
-    b.onclick = function() {
+  document.querySelectorAll('[data-n]').forEach(b => {
+    b.onclick = () => selectNatureForMon(b.dataset.n, (natName) => {
       const pData = D.pokemon[b.dataset.n];
       const ability = pData.abilities && pData.abilities.length ? rnd(pData.abilities) : null;
       run = {
         type: type,
         level: 1,
-        team: [{ name: b.dataset.n, nat: rnd(D.natures).name, currentHp: null, heldItem: null, ability: ability }],
+        team: [{ name: b.dataset.n, nat: natName, currentHp: null, heldItem: null, ability: ability }],
         taken: [],
         items: { potion: 2, leftovers: 1 },
         nextTrade: 7 + Math.floor(Math.random() * 2)
       };
       saveRun();
       hub();
-    };
+    });
   });
 }
 
-function hub(msg) {
-  if (!msg) msg = '';
+function selectNatureForMon(monName, onSelectCallback) {
+  const nats = shuffle(D.natures).slice(0, 3);
+  let natsHtml = '';
+
+  nats.forEach(n => {
+    let effectStr = "Bilanciata";
+    if (n.increases && n.decreases && n.increases !== n.decreases) {
+      effectStr = "+" + n.increases.toUpperCase() + " / -" + n.decreases.toUpperCase();
+    }
+    natsHtml += '<div class="item-card">' +
+      '<div><b>' + locName(n) + '</b><br><span class="mut">' + effectStr + '</span></div>' +
+      '<button data-nat="' + n.name + '">Scegli</button>' +
+    '</div>';
+  });
+
+  app().innerHTML =
+    '<h1>' + tTxt('chooseNature') + '</h1>' +
+    '<p class="mut" style="text-align:center">' + tTxt('natureDesc') + '<b>' + locName(D.pokemon[monName]) + '</b></p>' +
+    '<div style="margin:20px 0">' + natsHtml + '</div>';
+
+  document.querySelectorAll('[data-nat]').forEach(b => {
+    b.onclick = () => onSelectCallback(b.dataset.nat);
+  });
+}
+
+function hub(msg = '') {
   const L = run.level;
 
   if (L >= 100) {
     localStorage.removeItem('run');
     app().innerHTML =
       '<div class="badge" style="text-align:center;padding:24px">' +
-        '<h1>👑 VITTORIA DEFINITIVA! 👑</h1>' +
-        '<p style="font-size:16px;line-height:1.6;margin:16px 0">Complimenti! Hai raggiunto il <b>Livello 100</b> e sei diventato il <b>CAMPIONE ASSOLUTO DELLA LEGA</b>!</p>' +
-        '<button id="h" style="width:100%;margin-top:12px">Inizia una Nuova Avventura</button>' +
+        '<h1>' + tTxt('victory') + '</h1>' +
+        '<p style="font-size:16px;line-height:1.6;margin:16px 0">' + tTxt('victoryDesc') + '</p>' +
+        '<button id="h" style="width:100%;margin-top:12px">' + tTxt('newAv') + '</button>' +
       '</div>';
     getEl('#h').onclick = home;
     return;
   }
 
   let ev = '';
-  run.team.forEach(function(t) {
+  run.team.forEach(t => {
     const n = evolved(t.name, L);
     if (n !== t.name) {
-      ev += '✨ ' + D.pokemon[t.name].name_it + ' si è evoluto in ' + D.pokemon[n].name_it + '! ';
+      ev += '✨ ' + locName(D.pokemon[t.name]) + ' -> ' + locName(D.pokemon[n]) + '! ';
       t.name = n;
     }
   });
 
   if (ev) saveRun();
-  const team = run.team.map(function(t) { return mk(t.name, L, t.nat, t.currentHp, t.heldItem, t.ability); });
+  const team = run.team.map(t => mk(t.name, L, t.nat, t.currentHp, t.heldItem, t.ability));
 
   let fieldHtml = '';
-  team.forEach(function(m, i) { fieldHtml += panel(m, i === 0 ? '1° In Campo' : 'Panchina'); });
+  team.forEach((m, i) => { fieldHtml += panel(m, i === 0 ? '1° In Campo' : 'Panchina'); });
 
   app().innerHTML =
     '<div class="badge">' +
@@ -598,17 +749,17 @@ function hub(msg) {
     '<h2>La tua Squadra (' + team.length + '/6)</h2>' +
     '<div class="field">' + fieldHtml + '</div>' +
     '<div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:20px">' +
-      '<button id="go" style="flex:2">Lotta contro lo Sfidante</button>' +
-      '<button id="organize" class="btn-sec" style="flex:1">Gestisci Squadra</button>' +
-      '<button id="bag" class="btn-sec" style="flex:1">Zaino</button>' +
-      '<button id="quit" class="btn-sec" style="background:#8f1d1d">Abbandona</button>' +
+      '<button id="go" style="flex:2">' + tTxt('goFight') + '</button>' +
+      '<button id="organize" class="btn-sec" style="flex:1">' + tTxt('manageTeam') + '</button>' +
+      '<button id="bag" class="btn-sec" style="flex:1">' + tTxt('bag') + '</button>' +
+      '<button id="quit" class="btn-sec" style="background:#8f1d1d">' + tTxt('abandon') + '</button>' +
     '</div>';
 
   getEl('#go').onclick = startBattle;
   getEl('#organize').onclick = organizeTeam;
   getEl('#bag').onclick = openBag;
-  getEl('#quit').onclick = function() {
-    if (confirm('Ricominciare da capo? Tutti i progressi andranno persi.')) {
+  getEl('#quit').onclick = () => {
+    if (confirm('Ricominciare da capo?')) {
       localStorage.removeItem('run');
       run = null;
       home();
@@ -618,20 +769,20 @@ function hub(msg) {
 
 function organizeTeam() {
   let itemsHtml = '';
-  run.team.forEach(function(t, index) {
+  run.team.forEach((t, index) => {
     const fullMon = mk(t.name, run.level, t.nat, t.currentHp, t.heldItem, t.ability);
     const itemObj = t.heldItem && D.items[t.heldItem] ? D.items[t.heldItem] : null;
     itemsHtml += '<div class="team-list-item">' +
       '<div style="display:flex;align-items:center;gap:10px">' +
         '<img src="' + (D.pokemon[t.name].sprite || '') + '" width="48" alt="">' +
         '<div>' +
-          '<div><b>' + (index + 1) + '. ' + D.pokemon[t.name].name_it + '</b></div>' +
-          '<div class="mut">' + fullMon.hp + '/' + fullMon.s.hp + ' PS | Abilità: ' + (t.ability || 'Nessuna') + '</div>' +
-          (itemObj ? '<div class="held-badge">🎒 ' + itemObj.name_it + '</div>' : '') +
+          '<div><b>' + (index + 1) + '. ' + locName(D.pokemon[t.name]) + '</b></div>' +
+          '<div class="mut">' + fullMon.hp + '/' + fullMon.s.hp + ' PS</div>' +
+          (itemObj ? '<div class="held-badge">🎒 ' + locName(itemObj) + '</div>' : '') +
         '</div>' +
       '</div>' +
       '<div style="display:flex;gap:4px">' +
-        (t.heldItem ? '<button onclick="unequipItem(' + index + ')" class="btn-sec">Rimuovi Strumento</button>' : '') +
+        (t.heldItem ? '<button onclick="unequipItem(' + index + ')" class="btn-sec">Rimuovi</button>' : '') +
         (index > 0 ? '<button onclick="moveMon(' + index + ', -1)">▲</button>' : '') +
         (index < run.team.length - 1 ? '<button onclick="moveMon(' + index + ', 1)">▼</button>' : '') +
       '</div>' +
@@ -667,20 +818,20 @@ window.unequipItem = function(index) {
 
 function openBag() {
   const items = run.items || {};
-  const entries = Object.entries(items).filter(function(e) { return e[1] > 0; });
+  const entries = Object.entries(items).filter(e => e[1] > 0);
 
   let itemsHtml = '';
   if (entries.length === 0) {
     itemsHtml = '<p class="mut">Zaino vuoto.</p>';
   } else {
-    entries.forEach(function(entry) {
+    entries.forEach(entry => {
       const k = entry[0];
       const count = entry[1];
-      const info = D.items[k] || { name_it: k, desc: '', category: 'usable' };
+      const info = D.items[k] || { names: { it: k }, descs: { it: '' }, category: 'usable' };
       itemsHtml += '<div class="item-card">' +
         '<div>' +
-          '<div><b>' + info.name_it + ' (x' + count + ')</b></div>' +
-          '<div class="mut" style="font-size:12px">' + info.desc + '</div>' +
+          '<div><b>' + locName(info) + ' (x' + count + ')</b></div>' +
+          '<div class="mut" style="font-size:12px">' + (info.descs ? info.descs[currentLang] : '') + '</div>' +
         '</div>' +
         '<button onclick="useOrEquipItem(\'' + k + '\')">' + (info.category === 'held' ? 'Assegna' : 'Usa') + '</button>' +
       '</div>';
@@ -700,13 +851,13 @@ window.useOrEquipItem = function(itemKey) {
   if (!itemInfo || !run.items[itemKey] || run.items[itemKey] <= 0) return;
 
   let html = '<h1>' + (itemInfo.category === 'held' ? 'ASSEGNA STRUMENTO' : 'USA STRUMENTO') + '</h1><div style="margin:20px 0">';
-  run.team.forEach(function(t, idx) {
+  run.team.forEach((t, idx) => {
     const fullMon = mk(t.name, run.level, t.nat, t.currentHp, t.heldItem, t.ability);
-    const currItem = t.heldItem ? (D.items[t.heldItem] ? D.items[t.heldItem].name_it : t.heldItem) : 'Nessuno';
+    const currItem = t.heldItem ? (D.items[t.heldItem] ? locName(D.items[t.heldItem]) : t.heldItem) : 'Nessuno';
     html += '<div class="team-list-item">' +
       '<div style="display:flex;align-items:center;gap:10px">' +
         '<img src="' + (D.pokemon[t.name].sprite || '') + '" width="48" alt="">' +
-        '<div><b>' + D.pokemon[t.name].name_it + '</b><br><span class="mut">PS: ' + fullMon.hp + '/' + fullMon.s.hp + ' | Oggetto: ' + currItem + '</span></div>' +
+        '<div><b>' + locName(D.pokemon[t.name]) + '</b><br><span class="mut">PS: ' + fullMon.hp + '/' + fullMon.s.hp + ' | Oggetto: ' + currItem + '</span></div>' +
       '</div>' +
       '<button onclick="applyItemToMon(\'' + itemKey + '\', ' + idx + ')">Seleziona</button>' +
     '</div>';
@@ -721,28 +872,26 @@ window.applyItemToMon = function(itemKey, teamIndex) {
   const t = run.team[teamIndex];
 
   if (itemInfo.category === 'held') {
-    if (t.heldItem) {
-      run.items[t.heldItem] = (run.items[t.heldItem] || 0) + 1;
-    }
+    if (t.heldItem) run.items[t.heldItem] = (run.items[t.heldItem] || 0) + 1;
     t.heldItem = itemKey;
     run.items[itemKey]--;
     saveRun();
-    hub('Assegnato ' + itemInfo.name_it + ' a ' + D.pokemon[t.name].name_it + '!');
+    hub('Assegnato ' + locName(itemInfo) + ' a ' + locName(D.pokemon[t.name]) + '!');
   } else if (itemKey === 'potion' || itemKey === 'max-potion') {
     t.currentHp = null;
     run.items[itemKey]--;
     saveRun();
-    hub('Hai curato completamente ' + D.pokemon[t.name].name_it + '!');
+    hub('Hai curato completamente ' + locName(D.pokemon[t.name]) + '!');
   }
 };
 
 function startBattle() {
   const L = run.level;
-  run.team.forEach(function(t) { t.currentHp = null; });
+  run.team.forEach(t => { t.currentHp = null; });
   saveRun();
 
   B = {
-    me: run.team.map(function(t) { return mk(t.name, L, t.nat, null, t.heldItem, t.ability); }),
+    me: run.team.map(t => mk(t.name, L, t.nat, null, t.heldItem, t.ability)),
     fo: npcTeam(L, run.team.length),
     mi: 0, fi: 0, over: null,
     log: ['Uno sfidante ti sfida!']
@@ -759,15 +908,15 @@ function fight() {
   const me = B.me[B.mi];
   const fo = B.fo[B.fi];
 
-  const myAlive = B.me.filter(function(m) { return m.hp > 0; }).length;
-  const foAlive = B.fo.filter(function(m) { return m.hp > 0; }).length;
+  const myAlive = B.me.filter(m => m.hp > 0).length;
+  const foAlive = B.fo.filter(m => m.hp > 0).length;
 
   let movesHtml = '';
-  me.moves.forEach(function(m, i) {
-    movesHtml += '<button data-m="' + i + '">' + m.name_it + '<br><span class="mut">' + tn(m.type) + ' · Pot. ' + (m.power || 0) + '</span></button>';
+  me.moves.forEach((m, i) => {
+    movesHtml += '<button data-m="' + i + '">' + locName(m) + '<br><span class="mut">' + tn(m.type) + ' · Pot. ' + (m.power || '-') + '</span></button>';
   });
 
-  const logHtml = B.log.map(function(l) { return '<div>' + l + '</div>'; }).join('');
+  const logHtml = B.log.map(l => '<div>' + l + '</div>').join('');
 
   app().innerHTML =
     '<div class="field">' + panel(fo, 'Sfidante') + panel(me, 'Tuo Pokémon') + '</div>' +
@@ -784,8 +933,8 @@ function fight() {
   if (B.over) {
     getEl('#next').onclick = endBattle;
   } else {
-    document.querySelectorAll('[data-m]').forEach(function(b) {
-      b.onclick = function() { turn(parseInt(b.dataset.m, 10)); };
+    document.querySelectorAll('[data-m]').forEach(b => {
+      b.onclick = () => turn(parseInt(b.dataset.m, 10));
     });
   }
 }
@@ -830,7 +979,7 @@ function turn(mi) {
     [fo, me, chooseNpc(fo, me), false]
   ];
 
-  order.sort(function(x, y) {
+  order.sort((x, y) => {
     const spdA = getStat(x[0], 'speed');
     const spdB = getStat(y[0], 'speed');
     return (y[2].priority - x[2].priority) || (spdB - spdA) || (Math.random() - 0.5);
@@ -843,10 +992,23 @@ function turn(mi) {
     const mine = item[3];
 
     if (a.hp <= 0 || d.hp <= 0 || B.over) continue;
-    say((mine ? '' : 'Avversario: ') + nm(a) + ' usa ' + m.name_it + '!');
+    say((mine ? '' : 'Avversario: ') + nm(a) + ' usa ' + locName(m) + '!');
 
     if (Math.random() * 100 > (m.accuracy || 100)) {
       say('Ma fallisce!');
+      continue;
+    }
+
+    if (m.damage_class === 'status' || !m.power) {
+      // Gestione Mosse di Stato
+      if (m.stat_changes && m.stat_changes.length) {
+        m.stat_changes.forEach(sc => {
+          const target = (m.target === 'user' || m.target === 'selected-pokemon-user') ? a : d;
+          modifyStage(target, sc.stat, sc.change, say);
+        });
+      } else {
+        say('Nessun effetto visibile...');
+      }
       continue;
     }
 
@@ -870,15 +1032,15 @@ function turn(mi) {
 
     if (checkFaint(say)) break;
 
-    // Danni da abilità da contatto (Iron Barbs / Rough Skin)
+    // Danni da abilità da contatto
     if (m.damage_class === 'physical' && (d.ability === 'iron-barbs' || d.ability === 'rough-skin') && a.hp > 0) {
       const rec = Math.floor(a.s.hp / 8);
       a.hp = Math.max(0, a.hp - rec);
-      say(nm(a) + ' subisce danni dall\'abilità di ' + nm(d) + '!');
+      say(nm(a) + ' subisce danni da contatto!');
       if (checkFaint(say)) break;
     }
 
-    // Effetti passivi strumenti da contatto
+    // Effetti passivi strumenti
     if (m.damage_class === 'physical' && d.heldItem === 'rocky-helmet' && a.hp > 0) {
       const rec = Math.floor(a.s.hp / 6);
       a.hp = Math.max(0, a.hp - rec);
@@ -911,12 +1073,12 @@ function endBattle() {
     const possibleDrops = ['potion', 'max-potion', 'leftovers', 'life-orb', 'choice-band', 'choice-specs', 'choice-scarf', 'focus-sash', 'rocky-helmet'];
     const dropped = rnd(possibleDrops);
     run.items[dropped] = (run.items[dropped] || 0) + 1;
-    const nameFound = D.items[dropped] ? D.items[dropped].name_it : dropped;
+    const nameFound = D.items[dropped] ? locName(D.items[dropped]) : dropped;
     itemMsg = 'Hai trovato: 1x ' + nameFound + '!';
   }
 
   run.level = win ? run.level + 1 : Math.max(1, run.level - 1);
-  const cap = win && CAP.find(function(c) { return run.level >= c && !run.taken.includes(c); });
+  const cap = win && CAP.find(c => run.level >= c && !run.taken.includes(c));
 
   if (win && run.level >= (run.nextTrade || 7)) {
     run.nextTrade = run.level + 7 + Math.floor(Math.random() * 2);
@@ -935,74 +1097,67 @@ function endBattle() {
   }
 }
 
-function triggerTradeOffer(extraMsg) {
+function triggerTradeOffer(extraMsg = '') {
   const L = run.level;
-  const have = new Set(run.team.map(function(t) { return t.name; }));
-  const pool = Object.values(D.pokemon).filter(function(p) {
-    return eligible(p, L) && p.final_types.includes(run.type) && !have.has(p.name);
-  });
+  const have = new Set(run.team.map(t => t.name));
+  const pool = Object.values(D.pokemon).filter(p => eligible(p, L) && p.final_types.includes(run.type) && !have.has(p.name));
 
   if (!pool.length) {
-    hub('Un allenatore voleva uno scambio, ma non hai Pokémon disponibili. ' + extraMsg);
+    hub('Nessun Pokémon per lo scambio. ' + extraMsg);
     return;
   }
 
   const offeredMon = rnd(pool);
 
   let teamOptions = '';
-  run.team.forEach(function(t, idx) {
+  run.team.forEach((t, idx) => {
     teamOptions += '<div class="team-list-item">' +
       '<div style="display:flex;align-items:center;gap:10px">' +
         '<img src="' + (D.pokemon[t.name].sprite || '') + '" width="48" alt="">' +
-        '<div><b>' + D.pokemon[t.name].name_it + '</b></div>' +
+        '<div><b>' + locName(D.pokemon[t.name]) + '</b></div>' +
       '</div>' +
       '<button onclick="executeTrade(' + idx + ', \'' + offeredMon.name + '\')">Scambia</button>' +
     '</div>';
   });
 
   app().innerHTML =
-    '<h1>🔄 PROPOSTA DI SCAMBIO!</h1>' +
-    '<p class="mut" style="text-align:center">Un Allenatore ti offre <b>' + offeredMon.name_it + '</b> in cambio di un tuo Pokémon!</p>' +
+    '<h1>' + tTxt('tradeTitle') + '</h1>' +
+    '<p class="mut" style="text-align:center">' + tTxt('tradeDesc') + '<b>' + locName(offeredMon) + '</b>' + tTxt('tradeFor') + '</p>' +
     '<div style="text-align:center;margin:16px 0"><img src="' + (offeredMon.sprite || '') + '" width="96" alt=""></div>' +
     '<h2>Scegli chi cedere:</h2>' +
     '<div style="margin:16px 0">' + teamOptions + '</div>' +
-    '<button id="decline" class="btn-sec" style="width:100%">Rifiuta lo Scambio</button>';
+    '<button id="decline" class="btn-sec" style="width:100%">' + tTxt('declineTrade') + '</button>';
 
-  getEl('#decline').onclick = function() {
-    hub('Hai rifiutato lo scambio. ' + extraMsg);
-  };
+  getEl('#decline').onclick = () => hub('Hai rifiutato lo scambio. ' + extraMsg);
 }
 
 window.executeTrade = function(teamIndex, newMonName) {
-  const oldName = D.pokemon[run.team[teamIndex].name].name_it;
-  const heldItem = run.team[teamIndex].heldItem;
+  selectNatureForMon(newMonName, (natName) => {
+    const oldName = locName(D.pokemon[run.team[teamIndex].name]);
+    const heldItem = run.team[teamIndex].heldItem;
 
-  if (heldItem) {
-    run.items[heldItem] = (run.items[heldItem] || 0) + 1;
-  }
+    if (heldItem) run.items[heldItem] = (run.items[heldItem] || 0) + 1;
 
-  const pData = D.pokemon[newMonName];
-  const newAbility = pData.abilities && pData.abilities.length ? rnd(pData.abilities) : null;
+    const pData = D.pokemon[newMonName];
+    const newAbility = pData.abilities && pData.abilities.length ? rnd(pData.abilities) : null;
 
-  run.team[teamIndex] = {
-    name: newMonName,
-    nat: rnd(D.natures).name,
-    currentHp: null,
-    heldItem: null,
-    ability: newAbility
-  };
+    run.team[teamIndex] = {
+      name: newMonName,
+      nat: natName,
+      currentHp: null,
+      heldItem: null,
+      ability: newAbility
+    };
 
-  saveRun();
-  hub('Scambio effettuato! Hai dato ' + oldName + ' e ricevuto ' + D.pokemon[newMonName].name_it + '!');
+    saveRun();
+    hub('Scambio effettuato! Ceduto ' + oldName + ', ricevuto ' + locName(D.pokemon[newMonName]) + '!');
+  });
 };
 
-function capture(extraMsg) {
-  if (!extraMsg) extraMsg = '';
+function capture(extraMsg = '') {
   const L = run.level;
-  const have = new Set(run.team.map(function(t) { return t.name; }));
-  const pool = Object.values(D.pokemon).filter(function(p) {
-    return eligible(p, L) && p.final_types.includes(run.type) && !have.has(p.name);
-  });
+  const have = new Set(run.team.map(t => t.name));
+  const pool = Object.values(D.pokemon).filter(p => eligible(p, L) && p.final_types.includes(run.type) && !have.has(p.name));
   const opts = shuffle(pool).slice(0, 3);
 
   if (!opts.length || run.team.length >= 6) {
@@ -1011,35 +1166,33 @@ function capture(extraMsg) {
   }
 
   let optsHtml = '';
-  opts.forEach(function(p) {
-    optsHtml += '<button data-n="' + p.name + '"><img src="' + (p.sprite || '') + '" width="72" alt=""><br><b>' + p.name_it + '</b><br>' + p.types.map(tagHtml).join('') + '</button>';
+  opts.forEach(p => {
+    optsHtml += '<button data-n="' + p.name + '"><img src="' + (p.sprite || '') + '" width="72" alt=""><br><b>' + locName(p) + '</b><br>' + p.types.map(tagHtml).join('') + '</button>';
   });
 
   app().innerHTML =
-    '<h1>NUOVA CATTURA!</h1>' +
-    '<p class="mut" style="text-align:center">Scegli un nuovo Pokémon per la palestra ' + tn(run.type) + '.</p>' +
+    '<h1>' + tTxt('newCapture') + '</h1>' +
+    '<p class="mut" style="text-align:center">' + tTxt('captureDesc') + '</p>' +
     '<div class="grid">' + optsHtml + '</div>';
 
-  document.querySelectorAll('[data-n]').forEach(function(b) {
-    b.onclick = function() {
+  document.querySelectorAll('[data-n]').forEach(b => {
+    b.onclick = () => selectNatureForMon(b.dataset.n, (natName) => {
       const pData = D.pokemon[b.dataset.n];
       const ability = pData.abilities && pData.abilities.length ? rnd(pData.abilities) : null;
-      run.team.push({ name: b.dataset.n, nat: rnd(D.natures).name, currentHp: null, heldItem: null, ability: ability });
+      run.team.push({ name: b.dataset.n, nat: natName, currentHp: null, heldItem: null, ability: ability });
       saveRun();
       hub('Nuovo compagno aggiunto! ' + extraMsg);
-    };
+    });
   });
 }
 
 async function load() {
   try {
     const files = ['types', 'natures', 'moves', 'pokemon', 'items'];
-    const promises = files.map(function(f) {
-      return fetch('data/' + f + '.json').then(function(r) {
-        if (!r.ok) throw new Error('HTTP error ' + r.status);
-        return r.json();
-      });
-    });
+    const promises = files.map(f => fetch('data/' + f + '.json').then(r => {
+      if (!r.ok) throw new Error('HTTP error ' + r.status);
+      return r.json();
+    }));
 
     const results = await Promise.all(promises);
     D = {
